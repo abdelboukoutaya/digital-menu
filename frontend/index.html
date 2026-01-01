@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Maison Kayser – Menu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Menu Maison Kayser – Petit-déjeuner, carte, plats, desserts et boissons." />
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <header class="hero">
+        <div class="lang-switch" aria-label="Choisir la langue">
+            <button id="lang-fr" class="lang-btn" type="button">FR</button>
+            <button id="lang-en" class="lang-btn" type="button">EN</button>
+        </div>
+
+        <!-- ✅ Logo -->
+        <div class="hero-logo" aria-hidden="true">
+            <!-- Mets ton fichier ici : /assets/logo.png (ou change le chemin) -->
+            <img src="assets/logo.png" alt="" />
+        </div>
+
+        <h1>Maison Kayser</h1>
+
+        <!-- ✅ Petit trait -->
+        <div class="hero-rule" aria-hidden="true"></div>
+
+        <!-- ✅ Texte dynamique selon langue -->
+        <p id="hero-subtitle" class="hero-subtitle"></p>
+        <p id="hero-intro" class="hero-intro"></p>
+    </header>
+
+
+    <!-- NAVBAR (centrée, 5 onglets) -->
+    <nav id="navbar" class="navbar" aria-label="Navigation du menu"></nav>
+
+    <!-- CONTENU (SPA, sections masquées/affichées) -->
+    <main id="content" class="content" aria-live="polite"></main>
+
+    <!-- FOOTER (conforme) -->
+    <footer class="footer" aria-label="Informations Maison Kayser">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <div class="footer-title">Maison Kayser – Artisan Boulanger - Rabat</div>
+            </div>
+
+            <div class="footer-cols">
+                <div class="footer-col">
+                    <div class="footer-col-title">Horaires</div>
+                    <div class="footer-col-text">Ouvert 7j/7 de 7h à 23h</div>
+                </div>
+
+                <div class="footer-col">
+                    <div class="footer-col-title">Adresse</div>
+                    <div class="footer-col-text">Mahaj Ryad Center, Magasin 53, Rabat, Maroc</div>
+                </div>
+
+                <div class="footer-col">
+                    <div class="footer-col-title">Contact</div>
+                    <div class="footer-col-text">contact@maison-kayser.ma</div>
+
+                </div>
+
+                <div class="footer-col">
+                    <div class="footer-col-title" style="margin-top:10px;">Téléphone</div>
+                    <div class="footer-col-text">+212 5 37 71 61 61</div>
+                </div>
+
+            </div>
+
+            <div class="footer-bottom">© 2025 Maison Kayser. Tous droits réservés.</div>
+        </div>
+    </footer>
+
+    <script src="menu-data.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
