@@ -13,3 +13,7 @@ const PORT = process.env.PORT || 3000;   // ✅ important
 app.listen(PORT, () => {
   console.log("✅ API running on port", PORT);
 });
+
+"scripts": {
+  "start": "node server.js"
+}
