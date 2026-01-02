@@ -15,7 +15,7 @@ app.get("/api/health", (req, res) => {
 app.use(express.static(path.join(__dirname, "public")));
 
 // ✅ Fallback (toujours tout en bas)
-app.get("*", (req, res) => {
+app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
