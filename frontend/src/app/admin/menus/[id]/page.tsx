@@ -32,7 +32,10 @@ export default function EditMenu({ params }: { params: { id: string } }) {
         if (!menu) return
         setMenu({
             ...menu,
-            sections: [...menu.sections, { title: "Nouvelle section", categories: [] }]
+            sections: [
+                ...menu.sections,
+                { title: "Nouvelle section", categories: [] }
+            ]
         })
     }
 
@@ -68,63 +71,6 @@ export default function EditMenu({ params }: { params: { id: string } }) {
                             setMenu({ ...menu, sections })
                         }}
                     />
-
-                    <button
-                        onClick={() => {
-                            const sections = [...menu.sections]
-                            sections[i].categories.push({ title: "Nouvelle catégorie", items: [] })
-                            setMenu({ ...menu, sections })
-                        }}
-                    >
-                        Ajouter catégorie
-                    </button>
-
-                    {section.categories.map((cat, j) => (
-                        <div key={j} style={{ marginLeft: 20 }}>
-                            <input
-                                value={cat.title}
-                                onChange={(e) => {
-                                    const sections = [...menu.sections]
-                                    sections[i].categories[j].title = e.target.value
-                                    setMenu({ ...menu, sections })
-                                }}
-                            />
-
-                            <button
-                                onClick={() => {
-                                    const sections = [...menu.sections]
-                                    sections[i].categories[j].items.push({
-                                        name: "Nouvel item",
-                                        price: "0"
-                                    })
-                                    setMenu({ ...menu, sections })
-                                }}
-                            >
-                                Ajouter item
-                            </button>
-
-                            {cat.items.map((item, k) => (
-                                <div key={k} style={{ marginLeft: 20 }}>
-                                    <input
-                                        value={item.name}
-                                        onChange={(e) => {
-                                            const sections = [...menu.sections]
-                                            sections[i].categories[j].items[k].name = e.target.value
-                                            setMenu({ ...menu, sections })
-                                        }}
-                                    />
-                                    <input
-                                        value={item.price}
-                                        onChange={(e) => {
-                                            const sections = [...menu.sections]
-                                            sections[i].categories[j].items[k].price = e.target.value
-                                            setMenu({ ...menu, sections })
-                                        }}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    ))}
                 </div>
             ))}
 
