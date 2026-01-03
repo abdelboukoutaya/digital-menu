@@ -1,7 +1,7 @@
 "use client"
-import CreateMenuForm from "./CreateMenuForm"
-import { useEffect, useState } from "react"
 
+import { useEffect, useState } from "react"
+import CreateMenuForm from "./CreateMenuForm"
 type Menu = {
     _id: string
     clientSlug: string
