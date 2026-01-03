@@ -10,6 +10,11 @@ const {
 
 router.get("/", getMenus)
 router.post("/", createMenu)
+router.get("/:id", async (req, res) => {
+    const menu = await require("../models/Menu").findById(req.params.id)
+    res.json(menu)
+})
+
 router.put("/:id", updateMenu)
 router.delete("/:id", deleteMenu)
 
