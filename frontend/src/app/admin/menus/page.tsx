@@ -17,17 +17,20 @@ export default function AdminMenus() {
     }, [])
 
     const fetchMenus = async () => {
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus`
+        console.log("FETCH MENUS URL:", url)
         const res = await fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus`
         )
         const data = await res.json()
+        console.log("MENUS:", data)
         setMenus(data)
     }
 
     return (
         <main style={{ padding: 40 }}>
             <h2 style={{ color: "red" }}>
-                MENUS — DEBUG BUILD VERCEL 123
+                MENUS — DEBUG BUILD VERCEL this page
             </h2>
 
 
