@@ -46,6 +46,8 @@ export default function AdminMenus() {
                     </tr>
                 </thead>
                 <tbody>
+                    <h2>Menus - VERSION DEBUG ACTION</h2>
+
                     {menus.map((menu) => (
                         <tr key={menu._id}>
                             <td>{menu.clientSlug}</td>
