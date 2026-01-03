@@ -11,6 +11,7 @@ type Client = {
 }
 
 export default function AdminClients() {
+    console.log("ADMIN CLIENTS COMPONENT MOUNTED")
     const [clients, setClients] = useState<Client[]>([])
     const [showForm, setShowForm] = useState(false)
 
