@@ -42,6 +42,7 @@ export default function AdminMenus() {
                     <tr>
                         <th>Client</th>
                         <th>Langue</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -50,13 +51,22 @@ export default function AdminMenus() {
                             <td>{menu.clientSlug}</td>
                             <td>{menu.language}</td>
                             <td>
-                                <a href={`/admin/menus/${menu._id}`}>
+                                <a
+                                    href={`/admin/menus/${menu._id}`}
+                                    style={{
+                                        color: "#4ade80",
+                                        fontWeight: "bold",
+                                        textDecoration: "underline",
+                                        cursor: "pointer"
+                                    }}
+                                >
                                     Éditer
                                 </a>
                             </td>
                         </tr>
                     ))}
                 </tbody>
+
 
             </table>
         </main>
