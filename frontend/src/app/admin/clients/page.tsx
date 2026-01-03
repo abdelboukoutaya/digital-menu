@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import AddClientForm from "./AddClientForm"
 
 type Client = {
     _id: string
