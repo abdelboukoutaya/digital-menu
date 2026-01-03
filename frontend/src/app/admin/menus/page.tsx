@@ -26,7 +26,10 @@ export default function AdminMenus() {
 
     return (
         <main style={{ padding: 40 }}>
-            <h2>Menus</h2>
+            <h2 style={{ color: "red" }}>
+                MENUS — DEBUG BUILD VERCEL 123
+            </h2>
+
 
             <button
                 onClick={() => setShowForm(!showForm)}
@@ -46,7 +49,6 @@ export default function AdminMenus() {
                     </tr>
                 </thead>
                 <tbody>
-                    <h2>Menus - VERSION DEBUG ACTION</h2>
 
                     {menus.map((menu) => (
                         <tr key={menu._id}>
