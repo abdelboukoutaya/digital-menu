@@ -49,9 +49,15 @@ export default function AdminMenus() {
                         <tr key={menu._id}>
                             <td>{menu.clientSlug}</td>
                             <td>{menu.language}</td>
+                            <td>
+                                <a href={`/admin/menus/${menu._id}`}>
+                                    Éditer
+                                </a>
+                            </td>
                         </tr>
                     ))}
                 </tbody>
+
             </table>
         </main>
     )
