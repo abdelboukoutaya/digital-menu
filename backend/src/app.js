@@ -3,10 +3,29 @@ const cors = require("cors");
 
 const app = express();
 
-
-
-app.use(cors());
 app.use(express.json());
+const allowedOrigins = [
+    "http://localhost:3000",
+    "https://digital-menu-livid.vercel.app"
+];
+
+app.use(
+    cors({
+        origin: function (origin, callback) {
+            // Autoriser Postman / serveur / SSR
+            if (!origin) return callback(null, true);
+
+            if (allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error("Not allowed by CORS"));
+            }
+        },
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        allowedHeaders: ["Content-Type"]
+    })
+);
+
 
 // Routes API
 app.use("/api/menus", require("./routes/menus.routes"));
