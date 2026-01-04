@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react"
 
-type Item = { name: string; price: string }
-type Category = { title: string; items: Item[] }
-type Section = { title: string; categories: Category[] }
+type Section = {
+    title: string
+    categories: any[]
+}
 
 type Menu = {
     _id: string
@@ -18,8 +19,13 @@ export default function EditMenuClient({ id }: { id: string }) {
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
+        if (!id) {
+            setError("ID manquant")
+            return
+        }
+
         fetchMenu()
-    }, [])
+    }, [id])
 
     const fetchMenu = async () => {
         try {
@@ -52,32 +58,7 @@ export default function EditMenuClient({ id }: { id: string }) {
                 Édition du menu — {menu.clientSlug} ({menu.language})
             </h2>
 
-            <button
-                onClick={() =>
-                    setMenu({
-                        ...menu,
-                        sections: [
-                            ...menu.sections,
-                            { title: "Nouvelle section", categories: [] }
-                        ]
-                    })
-                }
-            >
-                Ajouter une section
-            </button>
-
-            {menu.sections.map((section, i) => (
-                <div key={i} style={{ marginTop: 20 }}>
-                    <input
-                        value={section.title}
-                        onChange={(e) => {
-                            const sections = [...menu.sections]
-                            sections[i].title = e.target.value
-                            setMenu({ ...menu, sections })
-                        }}
-                    />
-                </div>
-            ))}
+            <pre>{JSON.stringify(menu, null, 2)}</pre>
         </main>
     )
 }
