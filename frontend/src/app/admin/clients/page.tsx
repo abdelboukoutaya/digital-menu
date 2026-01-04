@@ -1,4 +1,4 @@
-"use client"
+/*"use client"
 
 import { useEffect, useState } from "react"
 import AddClientForm from "./AddClientForm"
@@ -62,6 +62,77 @@ export default function AdminClients() {
                             <td>{client.name}</td>
                             <td>{client.slug}</td>
                             <td>{client.orderMode}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </main>
+    )
+}
+*/
+"use client"
+
+import { useEffect, useState } from "react"
+
+type Client = {
+    _id: string
+    name: string
+    slug: string
+    theme?: string
+    orderMode?: string
+}
+
+export default function AdminClients() {
+    const [clients, setClients] = useState<Client[]>([])
+    const [error, setError] = useState<string | null>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        fetchClients()
+    }, [])
+
+    const fetchClients = async () => {
+        try {
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients`
+            )
+
+            if (!res.ok) {
+                throw new Error("Erreur API clients")
+            }
+
+            const data = await res.json()
+            setClients(data)
+        } catch (err: any) {
+            setError(err.message)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (loading) return <p>Chargement clients...</p>
+    if (error) return <p style={{ color: "red" }}>{error}</p>
+
+    return (
+        <main style={{ padding: 40 }}>
+            <h2>Clients (ADMIN)</h2>
+
+            <table border={1} cellPadding={8}>
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Slug</th>
+                        <th>Thème</th>
+                        <th>Mode commande</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {clients.map((client) => (
+                        <tr key={client._id}>
+                            <td>{client.name}</td>
+                            <td>{client.slug}</td>
+                            <td>{client.theme || "-"}</td>
+                            <td>{client.orderMode || "-"}</td>
                         </tr>
                     ))}
                 </tbody>
