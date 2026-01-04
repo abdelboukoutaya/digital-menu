@@ -1,7 +1,7 @@
 import EditMenuClient from "./EditMenuClient"
 
 export default function Page({
-    params
+    params,
 }: {
     params: { id: string }
 }) {
