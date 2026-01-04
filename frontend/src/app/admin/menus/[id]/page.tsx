@@ -13,45 +13,62 @@ type Menu = {
     sections: Section[]
 }
 
-export default function EditMenu({ params }: { params: { id: string } }) {
+export default function EditMenu({
+    params
+}: {
+    params: { id?: string }
+}) {
     const [menu, setMenu] = useState<Menu | null>(null)
+    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        fetchMenu()
-    }, [])
+        if (!params?.id) {
+            setError("ID du menu manquant dans l’URL")
+            return
+        }
 
-    const fetchMenu = async () => {
-        const res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus/${params.id}`
-        )
-        const data = await res.json()
-        setMenu(data)
-    }
+        fetchMenu(params.id)
+    }, [params?.id])
 
-    const addSection = () => {
-        if (!menu) return
-        setMenu({
-            ...menu,
-            sections: [
-                ...menu.sections,
-                { title: "Nouvelle section", categories: [] }
-            ]
-        })
-    }
+    const fetchMenu = async (id: string) => {
+        try {
+            console.log("FETCH MENU ID:", id)
 
-    const saveMenu = async () => {
-        await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus/${menu?._id}`,
-            {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(menu)
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus/${id}`
+            )
+
+            console.log("STATUS:", res.status)
+
+            if (!res.ok) {
+                throw new Error("Erreur API menu")
             }
-        )
-        alert("Menu sauvegardé")
+
+            const data = await res.json()
+            console.log("MENU DATA:", data)
+
+            setMenu(data)
+        } catch (err) {
+            setError("Impossible de charger le menu")
+        }
     }
 
-    if (!menu) return <p>Chargement...</p>
+    if (error) {
+        return (
+            <main style={{ padding: 40 }}>
+                <h2 style={{ color: "red" }}>Erreur</h2>
+                <p>{error}</p>
+            </main>
+        )
+    }
+
+    if (!menu) {
+        return (
+            <main style={{ padding: 40 }}>
+                <h2>Chargement du menu…</h2>
+            </main>
+        )
+    }
 
     return (
         <main style={{ padding: 40 }}>
@@ -59,7 +76,19 @@ export default function EditMenu({ params }: { params: { id: string } }) {
                 Édition du menu — {menu.clientSlug} ({menu.language})
             </h2>
 
-            <button onClick={addSection}>Ajouter une section</button>
+            <button
+                onClick={() =>
+                    setMenu({
+                        ...menu,
+                        sections: [
+                            ...menu.sections,
+                            { title: "Nouvelle section", categories: [] }
+                        ]
+                    })
+                }
+            >
+                Ajouter une section
+            </button>
 
             {menu.sections.map((section, i) => (
                 <div key={i} style={{ marginTop: 20 }}>
@@ -73,10 +102,6 @@ export default function EditMenu({ params }: { params: { id: string } }) {
                     />
                 </div>
             ))}
-
-            <button onClick={saveMenu} style={{ marginTop: 30 }}>
-                Sauvegarder
-            </button>
         </main>
     )
 }
