@@ -14,8 +14,9 @@ router.post("/", async (req, res) => {
     }
 })
 
-
+// ⚠️ PUBLIC — à sécuriser plus tard (ex: clé, token, rate limit)
 router.get("/", async (req, res) => {
+
     const orders = await Order.find().sort({ createdAt: -1 })
     res.json(orders)
 })
