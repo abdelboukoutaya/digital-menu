@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import AdminGuard from "@/components/AdminGuard"y
+import AdminGuard from "@/components/AdminGuard"
 import AdminLogout from "@/components/AdminLogout"
 
 
