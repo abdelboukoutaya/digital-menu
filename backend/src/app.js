@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const adminAuth = require("./middlewares/adminAuth")
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use("/api/admin/clients", adminAuth, require("./routes/admin.clients.routes"
 app.use("/api/admin/menus", adminAuth, require("./routes/admin.menus.routes"))
 app.use("/api/admin/orders", adminAuth, require("./routes/admin.orders.routes"))
 app.use("/api/admin/dashboard", adminAuth, require("./routes/admin.dashboard.routes"))
+app.use("/api/admin/auth", require("./routes/admin.auth.routes"))
 
 
 app.get("/api/health", (req, res) => {
