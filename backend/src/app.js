@@ -42,6 +42,7 @@ app.use("/api/admin/dashboard", adminAuth, require("./routes/admin.dashboard.rou
 app.use("/api/admin/auth", require("./routes/admin.auth.routes"))
 
 
+
 app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
 });
