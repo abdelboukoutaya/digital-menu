@@ -1,6 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import AdminGuard from "@/components/AdminGuard"y
+import AdminLogout from "@/components/AdminLogout"
+
 
 type DashboardStats = {
     clients: number
@@ -45,56 +48,60 @@ export default function AdminDashboard() {
     }
 
     return (
-        <main style={{ padding: 40 }}>
-            <h1>Dashboard Admin</h1>
+        <AdminGuard>
+            <main style={{ padding: 40 }}>
+                <h1>Dashboard Admin</h1>
+                <AdminLogout />
 
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(3, 1fr)",
-                    gap: 20,
-                    marginTop: 30
-                }}
-            >
-                <div
-                    style={{
-                        padding: 20,
-                        border: "1px solid #ccc",
-                        borderRadius: 8
-                    }}
-                >
-                    <h3>Clients</h3>
-                    <p style={{ fontSize: 32, fontWeight: "bold" }}>
-                        {stats.clients}
-                    </p>
-                </div>
 
                 <div
                     style={{
-                        padding: 20,
-                        border: "1px solid #ccc",
-                        borderRadius: 8
+                        display: "grid",
+                        gridTemplateColumns: "repeat(3, 1fr)",
+                        gap: 20,
+                        marginTop: 30
                     }}
                 >
-                    <h3>Menus</h3>
-                    <p style={{ fontSize: 32, fontWeight: "bold" }}>
-                        {stats.menus}
-                    </p>
-                </div>
+                    <div
+                        style={{
+                            padding: 20,
+                            border: "1px solid #ccc",
+                            borderRadius: 8
+                        }}
+                    >
+                        <h3>Clients</h3>
+                        <p style={{ fontSize: 32, fontWeight: "bold" }}>
+                            {stats.clients}
+                        </p>
+                    </div>
 
-                <div
-                    style={{
-                        padding: 20,
-                        border: "1px solid #ccc",
-                        borderRadius: 8
-                    }}
-                >
-                    <h3>Commandes</h3>
-                    <p style={{ fontSize: 32, fontWeight: "bold" }}>
-                        {stats.orders}
-                    </p>
+                    <div
+                        style={{
+                            padding: 20,
+                            border: "1px solid #ccc",
+                            borderRadius: 8
+                        }}
+                    >
+                        <h3>Menus</h3>
+                        <p style={{ fontSize: 32, fontWeight: "bold" }}>
+                            {stats.menus}
+                        </p>
+                    </div>
+
+                    <div
+                        style={{
+                            padding: 20,
+                            border: "1px solid #ccc",
+                            borderRadius: 8
+                        }}
+                    >
+                        <h3>Commandes</h3>
+                        <p style={{ fontSize: 32, fontWeight: "bold" }}>
+                            {stats.orders}
+                        </p>
+                    </div>
                 </div>
-            </div>
-        </main>
+            </main>
+        </AdminGuard>
     )
 }
