@@ -17,20 +17,27 @@ type Client = {
 export default function EditClientPage({
     params
 }: {
-    params: { id: string }
+    params: Promise<{ id: string }>
 }) {
     const router = useRouter()
 
+    const [clientId, setClientId] = useState<string | null>(null)
     const [client, setClient] = useState<Client | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
+    // 🔹 EXTRAIRE L'ID CORRECTEMENT (APP ROUTER)
     useEffect(() => {
-        if (!params?.id) {
-            setError("ID client manquant")
-            setLoading(false)
-            return
+        const resolveParams = async () => {
+            const resolved = await params
+            setClientId(resolved.id)
         }
+        resolveParams()
+    }, [params])
+
+    // 🔹 FETCH CLIENT UNE FOIS L'ID DISPONIBLE
+    useEffect(() => {
+        if (!clientId) return
 
         const fetchClient = async () => {
             const token = localStorage.getItem("admin_token")
@@ -43,7 +50,7 @@ export default function EditClientPage({
 
             try {
                 const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients/${params.id}`,
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients/${clientId}`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -53,7 +60,7 @@ export default function EditClientPage({
 
                 if (res.status === 404) {
                     setError("Client introuvable")
-                    setLoading(false) // ✅ FIX ICI
+                    setLoading(false)
                     return
                 }
 
@@ -63,15 +70,15 @@ export default function EditClientPage({
 
                 const data = await res.json()
                 setClient(data)
-                setLoading(false)
             } catch (e) {
                 setError("Erreur lors du chargement du client")
+            } finally {
                 setLoading(false)
             }
         }
 
         fetchClient()
-    }, [params.id])
+    }, [clientId])
 
     if (loading) {
         return (
@@ -148,9 +155,7 @@ export default function EditClientPage({
                     <br />
                     <input
                         type="color"
-                        value={
-                            client.theme?.primaryColor || "#000000"
-                        }
+                        value={client.theme?.primaryColor || "#000000"}
                         onChange={(e) =>
                             setClient({
                                 ...client,
