@@ -20,15 +20,28 @@ export default function AdminDashboard() {
     }, [])
 
     const fetchStats = async () => {
-        try {
-            const token = localStorage.getItem("admin_token")
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/admin/dashboard`, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("admin_token")}`
-                }
-            })
+        const token = localStorage.getItem("admin_token")
 
+        if (!token) {
+            setError("Non authentifié")
+            return
+        }
+
+        try {
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/admin/dashboard`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            )
+
+            if (res.status === 401) {
+                localStorage.removeItem("admin_token")
+                window.location.href = "/admin/login"
+                return
+            }
 
             if (!res.ok) {
                 throw new Error("Erreur dashboard")
@@ -40,6 +53,7 @@ export default function AdminDashboard() {
             setError("Impossible de charger le dashboard")
         }
     }
+
 
     if (error) {
         return <p style={{ color: "red" }}>{error}</p>
