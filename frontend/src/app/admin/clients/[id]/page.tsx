@@ -26,7 +26,11 @@ export default function EditClientPage({
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        if (!params?.id) return
+        if (!params?.id) {
+            setError("ID client manquant")
+            setLoading(false)
+            return
+        }
 
         const fetchClient = async () => {
             const token = localStorage.getItem("admin_token")
@@ -49,6 +53,7 @@ export default function EditClientPage({
 
                 if (res.status === 404) {
                     setError("Client introuvable")
+                    setLoading(false) // ✅ FIX ICI
                     return
                 }
 
@@ -58,9 +63,9 @@ export default function EditClientPage({
 
                 const data = await res.json()
                 setClient(data)
+                setLoading(false)
             } catch (e) {
                 setError("Erreur lors du chargement du client")
-            } finally {
                 setLoading(false)
             }
         }
