@@ -29,16 +29,24 @@ export default function EditClientPage({
             if (!token) return
 
             const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients`,
+                `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients/${params.id}`,
                 {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
                 }
             )
 
-            const data: Client[] = await res.json()
-            const found = data.find((c) => c._id === params.id)
-            setClient(found || null)
+            if (!res.ok) {
+                setClient(null)
+                setLoading(false)
+                return
+            }
+
+            const data: Client = await res.json()
+            setClient(data)
             setLoading(false)
+
         }
 
         fetchClient()
