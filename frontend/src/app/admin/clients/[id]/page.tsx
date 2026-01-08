@@ -20,42 +20,81 @@ export default function EditClientPage({
     params: { id: string }
 }) {
     const router = useRouter()
+
     const [client, setClient] = useState<Client | null>(null)
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
+        if (!params?.id) return
+
         const fetchClient = async () => {
             const token = localStorage.getItem("admin_token")
-            if (!token) return
 
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients/${params.id}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            )
-
-            if (!res.ok) {
-                setClient(null)
+            if (!token) {
+                setError("Non authentifié")
                 setLoading(false)
                 return
             }
 
-            const data: Client = await res.json()
-            setClient(data)
-            setLoading(false)
+            try {
+                const res = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients/${params.id}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    }
+                )
 
+                if (res.status === 404) {
+                    setError("Client introuvable")
+                    return
+                }
+
+                if (!res.ok) {
+                    throw new Error("Erreur API")
+                }
+
+                const data = await res.json()
+                setClient(data)
+            } catch (e) {
+                setError("Erreur lors du chargement du client")
+            } finally {
+                setLoading(false)
+            }
         }
 
         fetchClient()
     }, [params.id])
 
-    const save = async () => {
-        if (!client) return
+    if (loading) {
+        return (
+            <AdminGuard>
+                <p style={{ padding: 40 }}>Chargement…</p>
+            </AdminGuard>
+        )
+    }
 
+    if (error) {
+        return (
+            <AdminGuard>
+                <p style={{ padding: 40, color: "red" }}>{error}</p>
+            </AdminGuard>
+        )
+    }
+
+    if (!client) {
+        return (
+            <AdminGuard>
+                <p style={{ padding: 40 }}>Client introuvable</p>
+            </AdminGuard>
+        )
+    }
+
+    const save = async () => {
         const token = localStorage.getItem("admin_token")
+        if (!token) return
 
         await fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients/${client._id}`,
@@ -71,14 +110,6 @@ export default function EditClientPage({
 
         alert("Client sauvegardé")
         router.push("/admin/clients")
-    }
-
-    if (loading) {
-        return <AdminGuard>Chargement…</AdminGuard>
-    }
-
-    if (!client) {
-        return <AdminGuard>Client introuvable</AdminGuard>
     }
 
     return (
