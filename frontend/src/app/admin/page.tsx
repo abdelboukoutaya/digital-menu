@@ -21,7 +21,9 @@ export default function AdminDashboard() {
 
     const fetchStats = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/dashboard`, {
+            const token = localStorage.getItem("admin_token")
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/admin/dashboard`, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("admin_token")}`
                 }
