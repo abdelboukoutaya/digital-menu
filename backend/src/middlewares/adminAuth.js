@@ -1,9 +1,23 @@
-module.exports = function adminAuth(req, res, next) {
-    const adminKey = req.headers["x-admin-key"]
+const jwt = require("jsonwebtoken")
 
-    if (!adminKey || adminKey !== process.env.ADMIN_API_KEY) {
-        return res.status(401).json({ message: "Unauthorized admin access" })
+module.exports = function adminAuth(req, res, next) {
+    const authHeader = req.headers.authorization
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res
+            .status(401)
+            .json({ message: "Unauthorized admin access" })
     }
 
-    next()
+    const token = authHeader.split(" ")[1]
+
+    try {
+        const decoded = jwt.verify(token, process.env.ADMIN_JWT_SECRET)
+        req.admin = decoded
+        next()
+    } catch (err) {
+        return res
+            .status(401)
+            .json({ message: "Unauthorized admin access" })
+    }
 }

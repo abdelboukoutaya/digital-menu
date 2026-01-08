@@ -35,11 +35,16 @@ app.use(
 // Routes API
 app.use("/api/menus", require("./routes/menus.routes"));
 app.use("/api/orders", require("./routes/orders.routes"));
+
+// PUBLIC
+app.use("/api/admin/auth", require("./routes/admin.auth.routes"))
+
+// PROTÉGÉ
 app.use("/api/admin/clients", adminAuth, require("./routes/admin.clients.routes"))
 app.use("/api/admin/menus", adminAuth, require("./routes/admin.menus.routes"))
 app.use("/api/admin/orders", adminAuth, require("./routes/admin.orders.routes"))
 app.use("/api/admin/dashboard", adminAuth, require("./routes/admin.dashboard.routes"))
-app.use("/api/admin/auth", require("./routes/admin.auth.routes"))
+
 
 
 
