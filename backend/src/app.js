@@ -37,6 +37,7 @@ app.use("/api/orders", require("./routes/orders.routes"));
 app.use("/api/admin/clients", require("./routes/admin.clients.routes"));
 app.use("/api/admin/menus", require("./routes/admin.menus.routes"));
 app.use("/api/admin/orders", require("./routes/admin.orders.routes"));
+app.use("/api/admin/dashboard", require("./routes/admin.dashboard.routes"))
 
 app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
