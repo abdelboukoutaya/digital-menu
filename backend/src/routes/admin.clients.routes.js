@@ -1,6 +1,8 @@
 const express = require("express")
 const router = express.Router()
 
+const Client = require("../models/Client")
+
 const {
     getClients,
     createClient,
@@ -8,10 +10,12 @@ const {
     deleteClient
 } = require("../controllers/admin.clients.controller")
 
+// 🔹 LISTE DES CLIENTS
 router.get("/", getClients)
+
+// 🔹 GET CLIENT PAR ID (⚠️ AVANT put/delete)
 router.get("/:id", async (req, res) => {
     try {
-        const Client = require("../models/Client")
         const client = await Client.findById(req.params.id)
 
         if (!client) {
@@ -24,8 +28,13 @@ router.get("/:id", async (req, res) => {
     }
 })
 
+// 🔹 CRÉATION
 router.post("/", createClient)
+
+// 🔹 MISE À JOUR
 router.put("/:id", updateClient)
+
+// 🔹 SUPPRESSION
 router.delete("/:id", deleteClient)
 
 module.exports = router
