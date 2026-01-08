@@ -1,59 +1,51 @@
-const express = require("express");
-const cors = require("cors");
-const adminAuth = require("./middlewares/adminAuth")
+const express = require("express")
+const cors = require("cors")
 
-const app = express();
+const app = express()
 
-app.use(express.json());
+app.use(express.json())
 
-// ⚠️ ORIGINS AUTORISÉES (corrigé)
-const allowedOrigins = [
-    "http://localhost:3000",
-    "https://digital-menu-livid.vercel.app",
-    "https://digital-menu-one-kappa.vercel.app"
-];
-
+/**
+ * ✅ CORS SIMPLE & SÛR (DEV + PROD)
+ */
 app.use(
     cors({
-        origin: function (origin, callback) {
-            // Autoriser Postman / SSR / appels serveur
-            if (!origin) return callback(null, true);
-
-            if (allowedOrigins.includes(origin)) {
-                return callback(null, true);
-            } else {
-                console.error("CORS BLOCKED:", origin);
-                return callback(new Error("Not allowed by CORS"));
-            }
-        },
-        methods: ["GET", "POST", "PUT", "DELETE"],
-        allowedHeaders: ["Content-Type"],
+        origin: [
+            "http://localhost:3000",
+            "https://digital-menu-one-kappa.vercel.app"
+        ],
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
         credentials: true
     })
-);
+)
 
-// Routes API
-app.use("/api/menus", require("./routes/menus.routes"));
-app.use("/api/orders", require("./routes/orders.routes"));
+/**
+ * 🔹 ROUTES PUBLIQUES
+ */
+app.use("/api/menus", require("./routes/menus.routes"))
+app.use("/api/orders", require("./routes/orders.routes"))
 
-// PUBLIC
+/**
+ * 🔹 AUTH ADMIN
+ */
 app.use("/api/admin/auth", require("./routes/admin.auth.routes"))
 
-// PROTÉGÉ
+/**
+ * 🔹 ROUTES ADMIN PROTÉGÉES
+ */
+const adminAuth = require("./middlewares/adminAuth")
+
+app.use("/api/admin/dashboard", adminAuth, require("./routes/admin.dashboard.routes"))
 app.use("/api/admin/clients", adminAuth, require("./routes/admin.clients.routes"))
 app.use("/api/admin/menus", adminAuth, require("./routes/admin.menus.routes"))
 app.use("/api/admin/orders", adminAuth, require("./routes/admin.orders.routes"))
-app.use("/api/admin/dashboard", adminAuth, require("./routes/admin.dashboard.routes"))
 
-
-
-
+/**
+ * 🔹 HEALTH CHECK
+ */
 app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
-});
+    res.json({ status: "ok" })
+})
 
-app.get("/api/orders-test", (req, res) => {
-    res.json({ ok: true });
-});
-
-module.exports = app;
+module.exports = app
