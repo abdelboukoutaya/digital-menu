@@ -21,9 +21,12 @@ export default function AdminOrders() {
 
     const fetchOrders = async () => {
         try {
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/admin/orders`
-            )
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/dashboard`, {
+                headers: {
+                    "x-admin-key": process.env.NEXT_PUBLIC_ADMIN_API_KEY as string
+                }
+            })
+
 
             if (!res.ok) {
                 throw new Error("Erreur chargement commandes")

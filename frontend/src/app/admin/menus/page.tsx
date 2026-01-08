@@ -20,9 +20,12 @@ export default function AdminMenus() {
 
     const fetchMenus = async () => {
         try {
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus`
-            )
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/dashboard`, {
+                headers: {
+                    "x-admin-key": process.env.NEXT_PUBLIC_ADMIN_API_KEY as string
+                }
+            })
+
 
             if (!res.ok) {
                 throw new Error("Erreur lors du chargement des menus")
