@@ -1,144 +1,116 @@
-/*"use client"
+"use client"
 
 import { useEffect, useState } from "react"
-import AddClientForm from "./AddClientForm"
+import AdminGuard from "@/components/AdminGuard"
+import AdminLogout from "@/components/AdminLogout"
 
 type Client = {
     _id: string
     name: string
     slug: string
     orderMode: string
-}
-
-export default function AdminClients() {
-    console.log("ADMIN CLIENTS COMPONENT MOUNTED")
-    const [clients, setClients] = useState<Client[]>([])
-    const [showForm, setShowForm] = useState(false)
-
-    useEffect(() => {
-        fetchClients()
-    }, [])
-
-    const fetchClients = async () => {
-        console.log("API URL:", process.env.NEXT_PUBLIC_API_URL)
-
-        const res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients`
-        )
-
-        console.log("STATUS:", res.status)
-
-        const data = await res.json()
-        console.log("DATA:", data)
-
-        setClients(data)
+    theme?: {
+        primaryColor?: string
     }
-
-
-    return (
-        <main style={{ padding: 40 }}>
-            <h2>Clients</h2>
-
-            <button
-                onClick={() => setShowForm(!showForm)}
-                style={{ marginBottom: 20 }}
-            >
-                {showForm ? "Fermer" : "Ajouter un client"}
-            </button>
-
-            {showForm && <AddClientForm onCreated={fetchClients} />}
-
-            <table border={1} cellPadding={8}>
-                <thead>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Slug</th>
-                        <th>Mode commande</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {clients.map((client) => (
-                        <tr key={client._id}>
-                            <td>{client.name}</td>
-                            <td>{client.slug}</td>
-                            <td>{client.orderMode}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </main>
-    )
-}
-*/
-"use client"
-
-import { useEffect, useState } from "react"
-
-type Client = {
-    _id: string
-    name: string
-    slug: string
-    theme?: string
-    orderMode?: string
 }
 
-export default function AdminClients() {
+export default function AdminClientsPage() {
     const [clients, setClients] = useState<Client[]>([])
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
+        const fetchClients = async () => {
+            const token = localStorage.getItem("admin_token")
+
+            if (!token) {
+                setError("Non authentifié")
+                setLoading(false)
+                return
+            }
+
+            try {
+                const res = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    }
+                )
+
+                if (!res.ok) {
+                    throw new Error("Erreur API")
+                }
+
+                const data = await res.json()
+                setClients(data)
+            } catch (e) {
+                setError("Impossible de charger les clients")
+            } finally {
+                setLoading(false)
+            }
+        }
+
         fetchClients()
     }, [])
 
-    const fetchClients = async () => {
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/dashboard`, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("admin_token")}`
-                }
-            })
-
-            if (!res.ok) {
-                throw new Error("Erreur API clients")
-            }
-
-            const data = await res.json()
-            setClients(data)
-        } catch (err: any) {
-            setError(err.message)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    if (loading) return <p>Chargement clients...</p>
-    if (error) return <p style={{ color: "red" }}>{error}</p>
-
     return (
-        <main style={{ padding: 40 }}>
-            <h2>Clients (ADMIN)</h2>
+        <AdminGuard>
+            <main style={{ padding: 40 }}>
+                <h1>Clients</h1>
+                <AdminLogout />
 
-            <table border={1} cellPadding={8}>
-                <thead>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Slug</th>
-                        <th>Thème</th>
-                        <th>Mode commande</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {clients.map((client) => (
-                        <tr key={client._id}>
-                            <td>{client.name}</td>
-                            <td>{client.slug}</td>
-                            <td>{client.theme || "-"}</td>
-                            <td>{client.orderMode || "-"}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </main>
+                {loading && <p>Chargement…</p>}
+
+                {error && (
+                    <p style={{ color: "red", marginTop: 20 }}>{error}</p>
+                )}
+
+                {!loading && !error && clients.length === 0 && (
+                    <p>Aucun client trouvé</p>
+                )}
+
+                {!loading && clients.length > 0 && (
+                    <table
+                        border={1}
+                        cellPadding={10}
+                        style={{ marginTop: 30, width: "100%" }}
+                    >
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Slug</th>
+                                <th>Couleur</th>
+                                <th>Mode commande</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {clients.map((client) => (
+                                <tr key={client._id}>
+                                    <td>{client.name}</td>
+                                    <td>{client.slug}</td>
+                                    <td>
+                                        <span
+                                            style={{
+                                                display: "inline-block",
+                                                width: 16,
+                                                height: 16,
+                                                backgroundColor:
+                                                    client.theme
+                                                        ?.primaryColor ||
+                                                    "#ccc",
+                                                borderRadius: 4
+                                            }}
+                                        />
+                                    </td>
+                                    <td>{client.orderMode}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </main>
+        </AdminGuard>
     )
 }
