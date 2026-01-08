@@ -59,12 +59,15 @@ export default function AdminClientsPage() {
         <AdminGuard>
             <main style={{ padding: 40 }}>
                 <h1>Clients</h1>
+
                 <AdminLogout />
 
                 {loading && <p>Chargement…</p>}
 
                 {error && (
-                    <p style={{ color: "red", marginTop: 20 }}>{error}</p>
+                    <p style={{ color: "red", marginTop: 20 }}>
+                        {error}
+                    </p>
                 )}
 
                 {!loading && !error && clients.length === 0 && (
@@ -75,7 +78,11 @@ export default function AdminClientsPage() {
                     <table
                         border={1}
                         cellPadding={10}
-                        style={{ marginTop: 30, width: "100%" }}
+                        style={{
+                            marginTop: 30,
+                            width: "100%",
+                            borderCollapse: "collapse"
+                        }}
                     >
                         <thead>
                             <tr>
@@ -83,6 +90,7 @@ export default function AdminClientsPage() {
                                 <th>Slug</th>
                                 <th>Couleur</th>
                                 <th>Mode commande</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -94,17 +102,31 @@ export default function AdminClientsPage() {
                                         <span
                                             style={{
                                                 display: "inline-block",
-                                                width: 16,
-                                                height: 16,
+                                                width: 18,
+                                                height: 18,
                                                 backgroundColor:
                                                     client.theme
                                                         ?.primaryColor ||
                                                     "#ccc",
-                                                borderRadius: 4
+                                                borderRadius: 4,
+                                                border: "1px solid #555"
                                             }}
                                         />
                                     </td>
                                     <td>{client.orderMode}</td>
+                                    <td>
+                                        <a
+                                            href={`/admin/clients/${client._id}`}
+                                            style={{
+                                                color: "#4ade80",
+                                                fontWeight: "bold",
+                                                textDecoration:
+                                                    "underline"
+                                            }}
+                                        >
+                                            Éditer
+                                        </a>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
