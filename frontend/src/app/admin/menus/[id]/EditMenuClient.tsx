@@ -44,9 +44,9 @@ type Menu = {
     sections: Section[]
 }
 
-/* ───────── SORTABLE SECTION ───────── */
+/* ───────── GENERIC SORTABLE ───────── */
 
-function SortableSection({
+function SortableBlock({
     id,
     children
 }: {
@@ -58,12 +58,14 @@ function SortableSection({
 
     const style = {
         transform: CSS.Transform.toString(transform),
-        transition,
-        cursor: "grab"
+        transition
     }
 
     return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+        <div ref={setNodeRef} style={style}>
+            <div style={styles.dragHandle} {...attributes} {...listeners}>
+                ☰
+            </div>
             {children}
         </div>
     )
@@ -91,66 +93,18 @@ export default function EditMenuClient() {
         }
 
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus/${id}`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
+            headers: { Authorization: `Bearer ${token}` }
         })
             .then((res) => {
                 if (!res.ok) throw new Error()
                 return res.json()
             })
-            .then((data) => setMenu(data))
+            .then(setMenu)
             .catch(() => setError("Impossible de charger le menu"))
             .finally(() => setLoading(false))
     }, [id, router])
 
-    /* ───────── SECTIONS CRUD ───────── */
-
-    const addSection = () => {
-        if (!menu) return
-        setMenu({
-            ...menu,
-            sections: [
-                ...menu.sections,
-                { title: "Nouvelle section", categories: [] }
-            ]
-        })
-    }
-
-    const updateSectionTitle = (index: number, value: string) => {
-        if (!menu) return
-        const sections = [...menu.sections]
-        sections[index].title = value
-        setMenu({ ...menu, sections })
-    }
-
-    const removeSection = (index: number) => {
-        if (!menu) return
-        setMenu({
-            ...menu,
-            sections: menu.sections.filter((_, i) => i !== index)
-        })
-    }
-
-    /* ───────── DRAG & DROP SECTIONS ───────── */
-
-    const onDragEndSections = (event: any) => {
-        if (!menu) return
-        const { active, over } = event
-        if (!over || active.id === over.id) return
-
-        const oldIndex = menu.sections.findIndex(
-            (s) => s.title === active.id
-        )
-        const newIndex = menu.sections.findIndex(
-            (s) => s.title === over.id
-        )
-
-        const sections = arrayMove(menu.sections, oldIndex, newIndex)
-        setMenu({ ...menu, sections })
-    }
-
-    /* ───────── SAVE ───────── */
+    /* ───────── HELPERS ───────── */
 
     const saveMenu = async () => {
         if (!menu) return
@@ -175,22 +129,8 @@ export default function EditMenuClient() {
 
     /* ───────── UI STATES ───────── */
 
-    if (loading) {
-        return (
-            <AdminGuard>
-                <p style={styles.loading}>Chargement…</p>
-            </AdminGuard>
-        )
-    }
-
-    if (error) {
-        return (
-            <AdminGuard>
-                <p style={styles.error}>{error}</p>
-            </AdminGuard>
-        )
-    }
-
+    if (loading) return <AdminGuard><p style={styles.loading}>Chargement…</p></AdminGuard>
+    if (error) return <AdminGuard><p style={styles.error}>{error}</p></AdminGuard>
     if (!menu) return null
 
     /* ───────── RENDER ───────── */
@@ -202,43 +142,121 @@ export default function EditMenuClient() {
                     Menu — {menu.clientSlug} ({menu.language})
                 </h1>
 
-                <button onClick={addSection} style={styles.addBtn}>
-                    + Ajouter une section
-                </button>
-
                 <DndContext
                     collisionDetection={closestCenter}
-                    onDragEnd={onDragEndSections}
+                    onDragEnd={(e) => {
+                        const { active, over } = e
+                        if (!over || active.id === over.id) return
+                        const oldIndex = menu.sections.findIndex(
+                            (s) => s.title === active.id
+                        )
+                        const newIndex = menu.sections.findIndex(
+                            (s) => s.title === over.id
+                        )
+                        setMenu({
+                            ...menu,
+                            sections: arrayMove(
+                                menu.sections,
+                                oldIndex,
+                                newIndex
+                            )
+                        })
+                    }}
                 >
                     <SortableContext
                         items={menu.sections.map((s) => s.title)}
                         strategy={verticalListSortingStrategy}
                     >
-                        {menu.sections.map((section, i) => (
-                            <SortableSection
-                                key={section.title}
-                                id={section.title}
-                            >
+                        {menu.sections.map((section, s) => (
+                            <SortableBlock key={section.title} id={section.title}>
                                 <div style={styles.section}>
                                     <input
                                         value={section.title}
-                                        onChange={(e) =>
-                                            updateSectionTitle(
-                                                i,
-                                                e.target.value
-                                            )
-                                        }
+                                        onChange={(e) => {
+                                            const sections = [...menu.sections]
+                                            sections[s].title = e.target.value
+                                            setMenu({ ...menu, sections })
+                                        }}
                                         style={styles.sectionTitle}
                                     />
 
-                                    <button
-                                        onClick={() => removeSection(i)}
-                                        style={styles.remove}
+                                    {/* CATEGORIES */}
+                                    <DndContext
+                                        collisionDetection={closestCenter}
+                                        onDragEnd={(e) => {
+                                            const { active, over } = e
+                                            if (!over || active.id === over.id) return
+                                            const cats = section.categories
+                                            const old = cats.findIndex(c => c.title === active.id)
+                                            const neu = cats.findIndex(c => c.title === over.id)
+                                            cats.splice(0, cats.length, ...arrayMove(cats, old, neu))
+                                            setMenu({ ...menu })
+                                        }}
                                     >
-                                        Supprimer
-                                    </button>
+                                        <SortableContext
+                                            items={section.categories.map(c => c.title)}
+                                            strategy={verticalListSortingStrategy}
+                                        >
+                                            {section.categories.map((cat, c) => (
+                                                <SortableBlock key={cat.title} id={cat.title}>
+                                                    <div style={styles.category}>
+                                                        <input
+                                                            value={cat.title}
+                                                            onChange={(e) => {
+                                                                cat.title = e.target.value
+                                                                setMenu({ ...menu })
+                                                            }}
+                                                            style={styles.categoryTitle}
+                                                        />
+
+                                                        {/* ITEMS */}
+                                                        <DndContext
+                                                            collisionDetection={closestCenter}
+                                                            onDragEnd={(e) => {
+                                                                const { active, over } = e
+                                                                if (!over || active.id === over.id) return
+                                                                const items = cat.items
+                                                                const old = items.findIndex(i => i.name === active.id)
+                                                                const neu = items.findIndex(i => i.name === over.id)
+                                                                items.splice(0, items.length, ...arrayMove(items, old, neu))
+                                                                setMenu({ ...menu })
+                                                            }}
+                                                        >
+                                                            <SortableContext
+                                                                items={cat.items.map(i => i.name)}
+                                                                strategy={verticalListSortingStrategy}
+                                                            >
+                                                                {cat.items.map((item, i) => (
+                                                                    <SortableBlock key={item.name} id={item.name}>
+                                                                        <div style={styles.item}>
+                                                                            <input
+                                                                                value={item.name}
+                                                                                onChange={(e) => {
+                                                                                    item.name = e.target.value
+                                                                                    setMenu({ ...menu })
+                                                                                }}
+                                                                                placeholder="Nom"
+                                                                            />
+                                                                            <input
+                                                                                value={item.price}
+                                                                                onChange={(e) => {
+                                                                                    item.price = e.target.value
+                                                                                    setMenu({ ...menu })
+                                                                                }}
+                                                                                placeholder="Prix"
+                                                                            />
+                                                                        </div>
+                                                                    </SortableBlock>
+                                                                ))}
+                                                            </SortableContext>
+                                                        </DndContext>
+                                                    </div>
+                                                </SortableBlock>
+                                            ))}
+                                        </SortableContext>
+                                    </DndContext>
                                 </div>
-                            </SortableSection>
+                            </SortableBlock>
                         ))}
                     </SortableContext>
                 </DndContext>
@@ -254,44 +272,34 @@ export default function EditMenuClient() {
 /* ───────── STYLES ───────── */
 
 const styles: Record<string, CSSProperties> = {
-    container: {
-        padding: 40,
-        maxWidth: 900,
-        margin: "0 auto"
-    },
-    title: {
-        fontSize: 26,
-        marginBottom: 20
-    },
-    loading: {
-        padding: 40
-    },
-    error: {
-        padding: 40,
-        color: "red"
-    },
-    addBtn: {
-        marginBottom: 20,
-        fontWeight: "bold"
+    container: { padding: 40, maxWidth: 1000, margin: "0 auto" },
+    title: { fontSize: 26, marginBottom: 20 },
+    loading: { padding: 40 },
+    error: { padding: 40, color: "red" },
+    dragHandle: {
+        cursor: "grab",
+        fontSize: 18,
+        padding: "4px 8px",
+        userSelect: "none"
     },
     section: {
         border: "1px solid #444",
         padding: 16,
-        marginBottom: 12,
+        marginBottom: 20,
         borderRadius: 8,
         background: "#111"
     },
-    sectionTitle: {
-        width: "100%",
-        fontSize: 18,
-        fontWeight: "bold",
-        marginBottom: 8
+    sectionTitle: { width: "100%", fontSize: 18, fontWeight: "bold" },
+    category: {
+        marginTop: 12,
+        padding: 12,
+        borderLeft: "3px solid #555"
     },
-    remove: {
-        color: "red",
-        background: "none",
-        border: "none",
-        cursor: "pointer"
+    categoryTitle: { fontWeight: "bold", width: "100%" },
+    item: {
+        display: "flex",
+        gap: 8,
+        marginTop: 6
     },
     saveBtn: {
         marginTop: 30,
@@ -299,7 +307,6 @@ const styles: Record<string, CSSProperties> = {
         backgroundColor: "#16a34a",
         color: "white",
         fontWeight: "bold",
-        borderRadius: 6,
-        cursor: "pointer"
+        borderRadius: 6
     }
 }
