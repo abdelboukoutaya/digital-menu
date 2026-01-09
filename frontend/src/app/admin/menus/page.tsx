@@ -1,5 +1,5 @@
 "use client"
-
+import type { CSSProperties } from "react"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import AdminGuard from "@/components/AdminGuard"
@@ -115,7 +115,7 @@ export default function AdminMenusPage() {
 }
 
 /* 🎨 STYLES */
-const styles = {
+const styles: Record<string, CSSProperties> = {
     container: {
         padding: 40,
         maxWidth: 900,
