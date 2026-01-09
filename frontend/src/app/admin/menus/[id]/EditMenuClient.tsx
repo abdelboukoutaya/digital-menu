@@ -5,6 +5,23 @@ import { useParams, useRouter } from "next/navigation"
 import type { CSSProperties } from "react"
 import AdminGuard from "@/components/AdminGuard"
 
+/* DND */
+import {
+    DndContext,
+    closestCenter
+} from "@dnd-kit/core"
+
+import {
+    SortableContext,
+    verticalListSortingStrategy,
+    useSortable,
+    arrayMove
+} from "@dnd-kit/sortable"
+
+import { CSS } from "@dnd-kit/utilities"
+
+/* ───────── TYPES ───────── */
+
 type Item = {
     name: string
     price?: string
@@ -27,6 +44,33 @@ type Menu = {
     sections: Section[]
 }
 
+/* ───────── SORTABLE SECTION ───────── */
+
+function SortableSection({
+    id,
+    children
+}: {
+    id: string
+    children: React.ReactNode
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition } =
+        useSortable({ id })
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        cursor: "grab"
+    }
+
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+            {children}
+        </div>
+    )
+}
+
+/* ───────── PAGE ───────── */
+
 export default function EditMenuClient() {
     const { id } = useParams<{ id: string }>()
     const router = useRouter()
@@ -35,7 +79,7 @@ export default function EditMenuClient() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    /* ───────────────────────── LOAD MENU ───────────────────────── */
+    /* ───────── LOAD MENU ───────── */
 
     useEffect(() => {
         if (!id) return
@@ -47,7 +91,9 @@ export default function EditMenuClient() {
         }
 
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus/${id}`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
         })
             .then((res) => {
                 if (!res.ok) throw new Error()
@@ -58,7 +104,7 @@ export default function EditMenuClient() {
             .finally(() => setLoading(false))
     }, [id, router])
 
-    /* ───────────────────────── SECTIONS ───────────────────────── */
+    /* ───────── SECTIONS CRUD ───────── */
 
     const addSection = () => {
         if (!menu) return
@@ -71,79 +117,40 @@ export default function EditMenuClient() {
         })
     }
 
-    const updateSectionTitle = (s: number, value: string) => {
+    const updateSectionTitle = (index: number, value: string) => {
         if (!menu) return
         const sections = [...menu.sections]
-        sections[s].title = value
+        sections[index].title = value
         setMenu({ ...menu, sections })
     }
 
-    const removeSection = (s: number) => {
+    const removeSection = (index: number) => {
         if (!menu) return
         setMenu({
             ...menu,
-            sections: menu.sections.filter((_, i) => i !== s)
+            sections: menu.sections.filter((_, i) => i !== index)
         })
     }
 
-    /* ───────────────────────── CATEGORIES ───────────────────────── */
+    /* ───────── DRAG & DROP SECTIONS ───────── */
 
-    const addCategory = (s: number) => {
+    const onDragEndSections = (event: any) => {
         if (!menu) return
-        const sections = [...menu.sections]
-        sections[s].categories.push({ title: "Nouvelle catégorie", items: [] })
-        setMenu({ ...menu, sections })
-    }
+        const { active, over } = event
+        if (!over || active.id === over.id) return
 
-    const updateCategoryTitle = (s: number, c: number, value: string) => {
-        if (!menu) return
-        const sections = [...menu.sections]
-        sections[s].categories[c].title = value
-        setMenu({ ...menu, sections })
-    }
-
-    const removeCategory = (s: number, c: number) => {
-        if (!menu) return
-        const sections = [...menu.sections]
-        sections[s].categories = sections[s].categories.filter(
-            (_, i) => i !== c
+        const oldIndex = menu.sections.findIndex(
+            (s) => s.title === active.id
         )
+        const newIndex = menu.sections.findIndex(
+            (s) => s.title === over.id
+        )
+
+        const sections = arrayMove(menu.sections, oldIndex, newIndex)
         setMenu({ ...menu, sections })
     }
 
-    /* ───────────────────────── ITEMS ───────────────────────── */
-
-    const addItem = (s: number, c: number) => {
-        if (!menu) return
-        menu.sections[s].categories[c].items.push({
-            name: "Nouvel item",
-            price: ""
-        })
-        setMenu({ ...menu })
-    }
-
-    const updateItem = (
-        s: number,
-        c: number,
-        i: number,
-        field: "name" | "price",
-        value: string
-    ) => {
-        if (!menu) return
-        menu.sections[s].categories[c].items[i][field] = value
-        setMenu({ ...menu })
-    }
-
-    const removeItem = (s: number, c: number, i: number) => {
-        if (!menu) return
-        menu.sections[s].categories[c].items =
-            menu.sections[s].categories[c].items.filter(
-                (_, index) => index !== i
-            )
-        setMenu({ ...menu })
-    }
-
-    /* ───────────────────────── SAVE ───────────────────────── */
+    /* ───────── SAVE ───────── */
 
     const saveMenu = async () => {
         if (!menu) return
@@ -166,11 +173,27 @@ export default function EditMenuClient() {
         router.push("/admin/menus")
     }
 
-    /* ───────────────────────── UI STATES ───────────────────────── */
+    /* ───────── UI STATES ───────── */
 
-    if (loading) return <AdminGuard><p style={styles.loading}>Chargement…</p></AdminGuard>
-    if (error) return <AdminGuard><p style={styles.error}>{error}</p></AdminGuard>
+    if (loading) {
+        return (
+            <AdminGuard>
+                <p style={styles.loading}>Chargement…</p>
+            </AdminGuard>
+        )
+    }
+
+    if (error) {
+        return (
+            <AdminGuard>
+                <p style={styles.error}>{error}</p>
+            </AdminGuard>
+        )
+    }
+
     if (!menu) return null
+
+    /* ───────── RENDER ───────── */
 
     return (
         <AdminGuard>
@@ -183,86 +206,42 @@ export default function EditMenuClient() {
                     + Ajouter une section
                 </button>
 
-                {menu.sections.map((section, s) => (
-                    <div key={s} style={styles.section}>
-                        <input
-                            value={section.title}
-                            onChange={(e) =>
-                                updateSectionTitle(s, e.target.value)
-                            }
-                            style={styles.sectionTitle}
-                        />
+                <DndContext
+                    collisionDetection={closestCenter}
+                    onDragEnd={onDragEndSections}
+                >
+                    <SortableContext
+                        items={menu.sections.map((s) => s.title)}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        {menu.sections.map((section, i) => (
+                            <SortableSection
+                                key={section.title}
+                                id={section.title}
+                            >
+                                <div style={styles.section}>
+                                    <input
+                                        value={section.title}
+                                        onChange={(e) =>
+                                            updateSectionTitle(
+                                                i,
+                                                e.target.value
+                                            )
+                                        }
+                                        style={styles.sectionTitle}
+                                    />
 
-                        <button
-                            onClick={() => addCategory(s)}
-                            style={styles.subBtn}
-                        >
-                            + Ajouter une catégorie
-                        </button>
-
-                        {section.categories.map((cat, c) => (
-                            <div key={c} style={styles.category}>
-                                <input
-                                    value={cat.title}
-                                    onChange={(e) =>
-                                        updateCategoryTitle(
-                                            s,
-                                            c,
-                                            e.target.value
-                                        )
-                                    }
-                                    style={styles.categoryTitle}
-                                />
-
-                                <button
-                                    onClick={() => addItem(s, c)}
-                                    style={styles.subBtn}
-                                >
-                                    + Ajouter un item
-                                </button>
-
-                                {cat.items.map((item, i) => (
-                                    <div key={i} style={styles.item}>
-                                        <input
-                                            placeholder="Nom"
-                                            value={item.name}
-                                            onChange={(e) =>
-                                                updateItem(
-                                                    s,
-                                                    c,
-                                                    i,
-                                                    "name",
-                                                    e.target.value
-                                                )
-                                            }
-                                        />
-                                        <input
-                                            placeholder="Prix"
-                                            value={item.price}
-                                            onChange={(e) =>
-                                                updateItem(
-                                                    s,
-                                                    c,
-                                                    i,
-                                                    "price",
-                                                    e.target.value
-                                                )
-                                            }
-                                        />
-                                        <button
-                                            onClick={() =>
-                                                removeItem(s, c, i)
-                                            }
-                                            style={styles.remove}
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
+                                    <button
+                                        onClick={() => removeSection(i)}
+                                        style={styles.remove}
+                                    >
+                                        Supprimer
+                                    </button>
+                                </div>
+                            </SortableSection>
                         ))}
-                    </div>
-                ))}
+                    </SortableContext>
+                </DndContext>
 
                 <button onClick={saveMenu} style={styles.saveBtn}>
                     Sauvegarder le menu
@@ -272,35 +251,41 @@ export default function EditMenuClient() {
     )
 }
 
-/* ───────────────────────── STYLES ───────────────────────── */
+/* ───────── STYLES ───────── */
 
 const styles: Record<string, CSSProperties> = {
-    container: { padding: 40, maxWidth: 1000, margin: "0 auto" },
-    title: { fontSize: 26, marginBottom: 20 },
-    loading: { padding: 40 },
-    error: { padding: 40, color: "red" },
-    addBtn: { marginBottom: 20, fontWeight: "bold" },
+    container: {
+        padding: 40,
+        maxWidth: 900,
+        margin: "0 auto"
+    },
+    title: {
+        fontSize: 26,
+        marginBottom: 20
+    },
+    loading: {
+        padding: 40
+    },
+    error: {
+        padding: 40,
+        color: "red"
+    },
+    addBtn: {
+        marginBottom: 20,
+        fontWeight: "bold"
+    },
     section: {
         border: "1px solid #444",
         padding: 16,
-        marginBottom: 20,
-        borderRadius: 8
+        marginBottom: 12,
+        borderRadius: 8,
+        background: "#111"
     },
-    sectionTitle: { width: "100%", fontSize: 18, fontWeight: "bold" },
-    category: {
-        marginTop: 12,
-        padding: 12,
-        borderLeft: "3px solid #555"
-    },
-    categoryTitle: { fontWeight: "bold", width: "100%" },
-    item: {
-        display: "flex",
-        gap: 8,
-        marginTop: 6
-    },
-    subBtn: {
-        marginTop: 8,
-        fontSize: 13
+    sectionTitle: {
+        width: "100%",
+        fontSize: 18,
+        fontWeight: "bold",
+        marginBottom: 8
     },
     remove: {
         color: "red",
@@ -314,6 +299,7 @@ const styles: Record<string, CSSProperties> = {
         backgroundColor: "#16a34a",
         color: "white",
         fontWeight: "bold",
-        borderRadius: 6
+        borderRadius: 6,
+        cursor: "pointer"
     }
 }
