@@ -120,6 +120,24 @@ export default function EditMenuClient() {
     /* ───────── BEFORE UNLOAD ───────── */
 
     useEffect(() => {
+        const onBackAttempt = () => {
+            if (!isDirty) return
+
+            // Revenir immédiatement sur la page courante
+            window.history.pushState(null, "", window.location.href)
+
+            // Ouvrir le popup
+            setShowLeaveModal(true)
+        }
+
+        window.addEventListener("popstate", onBackAttempt)
+
+        // IMPORTANT : on ajoute un état initial dans l'historique
+        window.history.pushState(null, "", window.location.href)
+
+        return () => {
+            window.removeEventListener("popstate", onBackAttempt)
+        }
         const handler = (e: BeforeUnloadEvent) => {
             if (!isDirty) return
             e.preventDefault()
