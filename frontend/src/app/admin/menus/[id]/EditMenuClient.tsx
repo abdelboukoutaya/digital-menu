@@ -18,16 +18,19 @@ import { CSS } from "@dnd-kit/utilities"
 /* ───────── TYPES ───────── */
 
 type Item = {
+    _uid: string
     name: string
     price?: string
 }
 
 type Category = {
+    _uid: string
     title: string
     items: Item[]
 }
 
 type Section = {
+    _uid: string
     title: string
     categories: Category[]
 }
@@ -53,7 +56,8 @@ function SortableBlock({
 
     const style = {
         transform: CSS.Transform.toString(transform),
-        transition
+        transition,
+        touchAction: "none"
     }
 
     return (
@@ -97,12 +101,23 @@ export default function EditMenuClient() {
                 if (!res.ok) throw new Error()
                 return res.json()
             })
-            .then(setMenu)
+            .then((data) => {
+                data.sections.forEach((s: any) => {
+                    s._uid ||= crypto.randomUUID()
+                    s.categories.forEach((c: any) => {
+                        c._uid ||= crypto.randomUUID()
+                        c.items.forEach((i: any) => {
+                            i._uid ||= crypto.randomUUID()
+                        })
+                    })
+                })
+                setMenu(data)
+            })
             .catch(() => setError("Impossible de charger le menu"))
             .finally(() => setLoading(false))
     }, [id, router])
 
-    /* ───────── WARN BEFORE UNLOAD ───────── */
+    /* ───────── BEFORE UNLOAD ───────── */
 
     useEffect(() => {
         const handler = (e: BeforeUnloadEvent) => {
@@ -122,7 +137,11 @@ export default function EditMenuClient() {
             ...menu,
             sections: [
                 ...menu.sections,
-                { title: "Nouvelle section", categories: [] }
+                {
+                    _uid: crypto.randomUUID(),
+                    title: "Nouvelle section",
+                    categories: []
+                }
             ]
         })
         setIsDirty(true)
@@ -131,6 +150,7 @@ export default function EditMenuClient() {
     const addCategory = (s: number) => {
         if (!menu) return
         menu.sections[s].categories.push({
+            _uid: crypto.randomUUID(),
             title: "Nouvelle catégorie",
             items: []
         })
@@ -141,6 +161,7 @@ export default function EditMenuClient() {
     const addItem = (s: number, c: number) => {
         if (!menu) return
         menu.sections[s].categories[c].items.push({
+            _uid: crypto.randomUUID(),
             name: "Nouveau produit",
             price: ""
         })
@@ -212,13 +233,39 @@ export default function EditMenuClient() {
                     </button>
                 </div>
 
-                <DndContext collisionDetection={closestCenter}>
+                <DndContext
+                    collisionDetection={closestCenter}
+                    onDragEnd={(e) => {
+                        const { active, over } = e
+                        if (!over || active.id === over.id) return
+
+                        const oldIndex = menu.sections.findIndex(
+                            (s) => s._uid === active.id
+                        )
+                        const newIndex = menu.sections.findIndex(
+                            (s) => s._uid === over.id
+                        )
+
+                        setMenu({
+                            ...menu,
+                            sections: arrayMove(
+                                menu.sections,
+                                oldIndex,
+                                newIndex
+                            )
+                        })
+                        setIsDirty(true)
+                    }}
+                >
                     <SortableContext
-                        items={menu.sections.map((s) => s.title)}
+                        items={menu.sections.map((s) => s._uid)}
                         strategy={verticalListSortingStrategy}
                     >
                         {menu.sections.map((section, s) => (
-                            <SortableBlock key={section.title} id={section.title}>
+                            <SortableBlock
+                                key={section._uid}
+                                id={section._uid}
+                            >
                                 <div style={styles.section}>
                                     <input
                                         value={section.title}
@@ -237,116 +284,56 @@ export default function EditMenuClient() {
                                         + Ajouter une catégorie
                                     </button>
 
-                                    <SortableContext
-                                        items={section.categories.map(
-                                            (c) => c.title
-                                        )}
-                                        strategy={
-                                            verticalListSortingStrategy
-                                        }
-                                    >
-                                        {section.categories.map((cat, c) => (
-                                            <SortableBlock
-                                                key={cat.title}
-                                                id={cat.title}
+                                    {section.categories.map((cat, c) => (
+                                        <div key={cat._uid} style={styles.category}>
+                                            <input
+                                                value={cat.title}
+                                                onChange={(e) => {
+                                                    cat.title = e.target.value
+                                                    setMenu({ ...menu })
+                                                    setIsDirty(true)
+                                                }}
+                                                style={styles.categoryTitle}
+                                            />
+
+                                            <button
+                                                onClick={() => addItem(s, c)}
+                                                style={styles.subBtn}
                                             >
-                                                <div style={styles.category}>
+                                                + Ajouter un produit
+                                            </button>
+
+                                            {cat.items.map((item) => (
+                                                <div
+                                                    key={item._uid}
+                                                    style={styles.item}
+                                                >
                                                     <input
-                                                        value={cat.title}
+                                                        value={item.name}
                                                         onChange={(e) => {
-                                                            cat.title =
+                                                            item.name =
                                                                 e.target.value
                                                             setMenu({
                                                                 ...menu
                                                             })
                                                             setIsDirty(true)
                                                         }}
-                                                        style={
-                                                            styles.categoryTitle
-                                                        }
                                                     />
-
-                                                    <button
-                                                        onClick={() =>
-                                                            addItem(s, c)
-                                                        }
-                                                        style={styles.subBtn}
-                                                    >
-                                                        + Ajouter un produit
-                                                    </button>
-
-                                                    <SortableContext
-                                                        items={cat.items.map(
-                                                            (i) => i.name
-                                                        )}
-                                                        strategy={
-                                                            verticalListSortingStrategy
-                                                        }
-                                                    >
-                                                        {cat.items.map(
-                                                            (item, i) => (
-                                                                <SortableBlock
-                                                                    key={
-                                                                        item.name
-                                                                    }
-                                                                    id={
-                                                                        item.name
-                                                                    }
-                                                                >
-                                                                    <div
-                                                                        style={
-                                                                            styles.item
-                                                                        }
-                                                                    >
-                                                                        <input
-                                                                            value={
-                                                                                item.name
-                                                                            }
-                                                                            onChange={(
-                                                                                e
-                                                                            ) => {
-                                                                                item.name =
-                                                                                    e.target.value
-                                                                                setMenu(
-                                                                                    {
-                                                                                        ...menu
-                                                                                    }
-                                                                                )
-                                                                                setIsDirty(
-                                                                                    true
-                                                                                )
-                                                                            }}
-                                                                            placeholder="Nom"
-                                                                        />
-                                                                        <input
-                                                                            value={
-                                                                                item.price
-                                                                            }
-                                                                            onChange={(
-                                                                                e
-                                                                            ) => {
-                                                                                item.price =
-                                                                                    e.target.value
-                                                                                setMenu(
-                                                                                    {
-                                                                                        ...menu
-                                                                                    }
-                                                                                )
-                                                                                setIsDirty(
-                                                                                    true
-                                                                                )
-                                                                            }}
-                                                                            placeholder="Prix"
-                                                                        />
-                                                                    </div>
-                                                                </SortableBlock>
-                                                            )
-                                                        )}
-                                                    </SortableContext>
+                                                    <input
+                                                        value={item.price}
+                                                        onChange={(e) => {
+                                                            item.price =
+                                                                e.target.value
+                                                            setMenu({
+                                                                ...menu
+                                                            })
+                                                            setIsDirty(true)
+                                                        }}
+                                                    />
                                                 </div>
-                                            </SortableBlock>
-                                        ))}
-                                    </SortableContext>
+                                            ))}
+                                        </div>
+                                    ))}
                                 </div>
                             </SortableBlock>
                         ))}
@@ -357,7 +344,6 @@ export default function EditMenuClient() {
                     Sauvegarder le menu
                 </button>
 
-                {/* MODAL */}
                 {showLeaveModal && (
                     <div style={modal.overlay}>
                         <div style={modal.box}>
