@@ -39,7 +39,7 @@ type Menu = {
     sections: Section[]
 }
 
-/* ───────── SORTABLE WRAPPER ───────── */
+/* ───────── SORTABLE BLOCK ───────── */
 
 function SortableBlock({
     id,
@@ -76,6 +76,9 @@ export default function EditMenuClient() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
+    const [isDirty, setIsDirty] = useState(false)
+    const [showLeaveModal, setShowLeaveModal] = useState(false)
+
     /* ───────── LOAD MENU ───────── */
 
     useEffect(() => {
@@ -99,7 +102,19 @@ export default function EditMenuClient() {
             .finally(() => setLoading(false))
     }, [id, router])
 
-    /* ───────── ADD / REMOVE ───────── */
+    /* ───────── WARN BEFORE UNLOAD ───────── */
+
+    useEffect(() => {
+        const handler = (e: BeforeUnloadEvent) => {
+            if (!isDirty) return
+            e.preventDefault()
+            e.returnValue = ""
+        }
+        window.addEventListener("beforeunload", handler)
+        return () => window.removeEventListener("beforeunload", handler)
+    }, [isDirty])
+
+    /* ───────── CRUD ───────── */
 
     const addSection = () => {
         if (!menu) return
@@ -110,6 +125,7 @@ export default function EditMenuClient() {
                 { title: "Nouvelle section", categories: [] }
             ]
         })
+        setIsDirty(true)
     }
 
     const addCategory = (s: number) => {
@@ -119,6 +135,7 @@ export default function EditMenuClient() {
             items: []
         })
         setMenu({ ...menu })
+        setIsDirty(true)
     }
 
     const addItem = (s: number, c: number) => {
@@ -128,6 +145,7 @@ export default function EditMenuClient() {
             price: ""
         })
         setMenu({ ...menu })
+        setIsDirty(true)
     }
 
     /* ───────── SAVE ───────── */
@@ -149,8 +167,13 @@ export default function EditMenuClient() {
             }
         )
 
-        alert("Menu sauvegardé")
+        setIsDirty(false)
         router.push("/admin/menus")
+    }
+
+    const attemptLeave = () => {
+        if (isDirty) setShowLeaveModal(true)
+        else router.push("/admin/menus")
     }
 
     /* ───────── UI STATES ───────── */
@@ -180,9 +203,14 @@ export default function EditMenuClient() {
                     Menu — {menu.clientSlug} ({menu.language})
                 </h1>
 
-                <button onClick={addSection} style={styles.addBtn}>
-                    + Ajouter une section
-                </button>
+                <div style={{ marginBottom: 20 }}>
+                    <button onClick={addSection} style={styles.addBtn}>
+                        + Ajouter une section
+                    </button>
+                    <button onClick={attemptLeave} style={{ marginLeft: 10 }}>
+                        Quitter
+                    </button>
+                </div>
 
                 <DndContext collisionDetection={closestCenter}>
                     <SortableContext
@@ -197,6 +225,7 @@ export default function EditMenuClient() {
                                         onChange={(e) => {
                                             section.title = e.target.value
                                             setMenu({ ...menu })
+                                            setIsDirty(true)
                                         }}
                                         style={styles.sectionTitle}
                                     />
@@ -230,6 +259,7 @@ export default function EditMenuClient() {
                                                             setMenu({
                                                                 ...menu
                                                             })
+                                                            setIsDirty(true)
                                                         }}
                                                         style={
                                                             styles.categoryTitle
@@ -282,6 +312,9 @@ export default function EditMenuClient() {
                                                                                         ...menu
                                                                                     }
                                                                                 )
+                                                                                setIsDirty(
+                                                                                    true
+                                                                                )
                                                                             }}
                                                                             placeholder="Nom"
                                                                         />
@@ -298,6 +331,9 @@ export default function EditMenuClient() {
                                                                                     {
                                                                                         ...menu
                                                                                     }
+                                                                                )
+                                                                                setIsDirty(
+                                                                                    true
                                                                                 )
                                                                             }}
                                                                             placeholder="Prix"
@@ -320,6 +356,42 @@ export default function EditMenuClient() {
                 <button onClick={saveMenu} style={styles.saveBtn}>
                     Sauvegarder le menu
                 </button>
+
+                {/* MODAL */}
+                {showLeaveModal && (
+                    <div style={modal.overlay}>
+                        <div style={modal.box}>
+                            <h3>Modifications non sauvegardées</h3>
+                            <p>Que souhaitez-vous faire ?</p>
+
+                            <div style={modal.actions}>
+                                <button
+                                    onClick={saveMenu}
+                                    style={modal.save}
+                                >
+                                    Sauvegarder
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setIsDirty(false)
+                                        router.push("/admin/menus")
+                                    }}
+                                    style={modal.leave}
+                                >
+                                    Quitter sans sauvegarder
+                                </button>
+                                <button
+                                    onClick={() =>
+                                        setShowLeaveModal(false)
+                                    }
+                                    style={modal.cancel}
+                                >
+                                    Annuler
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </main>
         </AdminGuard>
     )
@@ -338,7 +410,7 @@ const styles: Record<string, CSSProperties> = {
         fontSize: 18,
         marginBottom: 6
     },
-    addBtn: { marginBottom: 20, fontWeight: "bold" },
+    addBtn: { fontWeight: "bold" },
     subBtn: { marginTop: 8, fontSize: 13 },
     section: {
         border: "1px solid #444",
@@ -361,5 +433,46 @@ const styles: Record<string, CSSProperties> = {
         color: "white",
         fontWeight: "bold",
         borderRadius: 6
+    }
+}
+
+const modal = {
+    overlay: {
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.6)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000
+    },
+    box: {
+        background: "#111",
+        padding: 24,
+        borderRadius: 8,
+        width: 360,
+        textAlign: "center"
+    },
+    actions: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        marginTop: 20
+    },
+    save: {
+        background: "#16a34a",
+        color: "white",
+        padding: 10,
+        fontWeight: "bold"
+    },
+    leave: {
+        background: "#dc2626",
+        color: "white",
+        padding: 10
+    },
+    cancel: {
+        background: "#444",
+        color: "white",
+        padding: 10
     }
 }
