@@ -147,6 +147,7 @@ export default function EditClientPage({
                     >
                         <option value="whatsapp">WhatsApp</option>
                         <option value="form">Formulaire</option>
+                        <option value="catalog">catalogue</option>
                     </select>
                 </div>
 
