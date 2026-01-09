@@ -122,25 +122,36 @@ export default function EditMenuClient() {
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
             if (!isDirty) return
+
             e.preventDefault()
             e.returnValue = ""
         }
 
         window.addEventListener("beforeunload", handleBeforeUnload)
-        return () =>
+
+        return () => {
             window.removeEventListener("beforeunload", handleBeforeUnload)
+        }
     }, [isDirty])
+
     useEffect(() => {
         const handleBackNavigation = () => {
             if (!isDirty) return
+
+            // Annule le retour arrière
             window.history.forward()
+
+            // Affiche le popup custom
             setShowLeaveModal(true)
         }
 
         window.addEventListener("popstate", handleBackNavigation)
-        return () =>
+
+        return () => {
             window.removeEventListener("popstate", handleBackNavigation)
+        }
     }, [isDirty])
+
 
 
     /* ───────── CRUD ───────── */
