@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
+import type { CSSProperties } from "react"
 import AdminGuard from "@/components/AdminGuard"
+
+type Item = {
+    name: string
+    price?: string
+}
+
+type Category = {
+    title: string
+    items: Item[]
+}
 
 type Section = {
     title: string
-    categories: any[]
+    categories: Category[]
 }
 
 type Menu = {
@@ -24,46 +35,31 @@ export default function EditMenuClient() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    // 🔹 Chargement du menu
+    /* ───────────────────────── LOAD MENU ───────────────────────── */
+
     useEffect(() => {
-        if (!id) {
-            setError("Menu introuvable")
-            setLoading(false)
+        if (!id) return
+
+        const token = localStorage.getItem("admin_token")
+        if (!token) {
+            router.replace("/admin/login")
             return
         }
 
-        const fetchMenu = async () => {
-            const token = localStorage.getItem("admin_token")
-            if (!token) {
-                router.replace("/admin/login")
-                return
-            }
-
-            try {
-                const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus/${id}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
-                    }
-                )
-
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+            .then((res) => {
                 if (!res.ok) throw new Error()
-
-                const data = await res.json()
-                setMenu(data)
-            } catch {
-                setError("Impossible de charger le menu")
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchMenu()
+                return res.json()
+            })
+            .then((data) => setMenu(data))
+            .catch(() => setError("Impossible de charger le menu"))
+            .finally(() => setLoading(false))
     }, [id, router])
 
-    // 🔹 Ajouter une section
+    /* ───────────────────────── SECTIONS ───────────────────────── */
+
     const addSection = () => {
         if (!menu) return
         setMenu({
@@ -75,24 +71,80 @@ export default function EditMenuClient() {
         })
     }
 
-    // 🔹 Modifier titre section
-    const updateSectionTitle = (index: number, value: string) => {
+    const updateSectionTitle = (s: number, value: string) => {
         if (!menu) return
         const sections = [...menu.sections]
-        sections[index].title = value
+        sections[s].title = value
         setMenu({ ...menu, sections })
     }
 
-    // 🔹 Supprimer section
-    const removeSection = (index: number) => {
+    const removeSection = (s: number) => {
         if (!menu) return
         setMenu({
             ...menu,
-            sections: menu.sections.filter((_, i) => i !== index)
+            sections: menu.sections.filter((_, i) => i !== s)
         })
     }
 
-    // 🔹 Sauvegarde
+    /* ───────────────────────── CATEGORIES ───────────────────────── */
+
+    const addCategory = (s: number) => {
+        if (!menu) return
+        const sections = [...menu.sections]
+        sections[s].categories.push({ title: "Nouvelle catégorie", items: [] })
+        setMenu({ ...menu, sections })
+    }
+
+    const updateCategoryTitle = (s: number, c: number, value: string) => {
+        if (!menu) return
+        const sections = [...menu.sections]
+        sections[s].categories[c].title = value
+        setMenu({ ...menu, sections })
+    }
+
+    const removeCategory = (s: number, c: number) => {
+        if (!menu) return
+        const sections = [...menu.sections]
+        sections[s].categories = sections[s].categories.filter(
+            (_, i) => i !== c
+        )
+        setMenu({ ...menu, sections })
+    }
+
+    /* ───────────────────────── ITEMS ───────────────────────── */
+
+    const addItem = (s: number, c: number) => {
+        if (!menu) return
+        menu.sections[s].categories[c].items.push({
+            name: "Nouvel item",
+            price: ""
+        })
+        setMenu({ ...menu })
+    }
+
+    const updateItem = (
+        s: number,
+        c: number,
+        i: number,
+        field: "name" | "price",
+        value: string
+    ) => {
+        if (!menu) return
+        menu.sections[s].categories[c].items[i][field] = value
+        setMenu({ ...menu })
+    }
+
+    const removeItem = (s: number, c: number, i: number) => {
+        if (!menu) return
+        menu.sections[s].categories[c].items =
+            menu.sections[s].categories[c].items.filter(
+                (_, index) => index !== i
+            )
+        setMenu({ ...menu })
+    }
+
+    /* ───────────────────────── SAVE ───────────────────────── */
+
     const saveMenu = async () => {
         if (!menu) return
         const token = localStorage.getItem("admin_token")
@@ -114,30 +166,11 @@ export default function EditMenuClient() {
         router.push("/admin/menus")
     }
 
-    // 🔹 États UI
-    if (loading) {
-        return (
-            <AdminGuard>
-                <p style={styles.loading}>Chargement…</p>
-            </AdminGuard>
-        )
-    }
+    /* ───────────────────────── UI STATES ───────────────────────── */
 
-    if (error) {
-        return (
-            <AdminGuard>
-                <p style={styles.error}>{error}</p>
-            </AdminGuard>
-        )
-    }
-
-    if (!menu) {
-        return (
-            <AdminGuard>
-                <p style={styles.error}>Menu introuvable</p>
-            </AdminGuard>
-        )
-    }
+    if (loading) return <AdminGuard><p style={styles.loading}>Chargement…</p></AdminGuard>
+    if (error) return <AdminGuard><p style={styles.error}>{error}</p></AdminGuard>
+    if (!menu) return null
 
     return (
         <AdminGuard>
@@ -146,30 +179,92 @@ export default function EditMenuClient() {
                     Menu — {menu.clientSlug} ({menu.language})
                 </h1>
 
-                <button onClick={addSection} style={styles.addButton}>
+                <button onClick={addSection} style={styles.addBtn}>
                     + Ajouter une section
                 </button>
 
-                {menu.sections.map((section, i) => (
-                    <div key={i} style={styles.sectionCard}>
+                {menu.sections.map((section, s) => (
+                    <div key={s} style={styles.section}>
                         <input
                             value={section.title}
                             onChange={(e) =>
-                                updateSectionTitle(i, e.target.value)
+                                updateSectionTitle(s, e.target.value)
                             }
-                            style={styles.sectionInput}
+                            style={styles.sectionTitle}
                         />
 
                         <button
-                            onClick={() => removeSection(i)}
-                            style={styles.deleteButton}
+                            onClick={() => addCategory(s)}
+                            style={styles.subBtn}
                         >
-                            Supprimer
+                            + Ajouter une catégorie
                         </button>
+
+                        {section.categories.map((cat, c) => (
+                            <div key={c} style={styles.category}>
+                                <input
+                                    value={cat.title}
+                                    onChange={(e) =>
+                                        updateCategoryTitle(
+                                            s,
+                                            c,
+                                            e.target.value
+                                        )
+                                    }
+                                    style={styles.categoryTitle}
+                                />
+
+                                <button
+                                    onClick={() => addItem(s, c)}
+                                    style={styles.subBtn}
+                                >
+                                    + Ajouter un item
+                                </button>
+
+                                {cat.items.map((item, i) => (
+                                    <div key={i} style={styles.item}>
+                                        <input
+                                            placeholder="Nom"
+                                            value={item.name}
+                                            onChange={(e) =>
+                                                updateItem(
+                                                    s,
+                                                    c,
+                                                    i,
+                                                    "name",
+                                                    e.target.value
+                                                )
+                                            }
+                                        />
+                                        <input
+                                            placeholder="Prix"
+                                            value={item.price}
+                                            onChange={(e) =>
+                                                updateItem(
+                                                    s,
+                                                    c,
+                                                    i,
+                                                    "price",
+                                                    e.target.value
+                                                )
+                                            }
+                                        />
+                                        <button
+                                            onClick={() =>
+                                                removeItem(s, c, i)
+                                            }
+                                            style={styles.remove}
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
                     </div>
                 ))}
 
-                <button onClick={saveMenu} style={styles.saveButton}>
+                <button onClick={saveMenu} style={styles.saveBtn}>
                     Sauvegarder le menu
                 </button>
             </main>
@@ -177,56 +272,48 @@ export default function EditMenuClient() {
     )
 }
 
-/* 🎨 STYLES (simple & propre) */
-const styles = {
-    container: {
-        padding: 40,
-        maxWidth: 900,
-        margin: "0 auto"
-    },
-    title: {
-        fontSize: 24,
-        marginBottom: 20
-    },
-    loading: {
-        padding: 40
-    },
-    error: {
-        padding: 40,
-        color: "red"
-    },
-    addButton: {
-        padding: "10px 16px",
-        marginBottom: 20,
-        fontWeight: "bold",
-        cursor: "pointer"
-    },
-    sectionCard: {
+/* ───────────────────────── STYLES ───────────────────────── */
+
+const styles: Record<string, CSSProperties> = {
+    container: { padding: 40, maxWidth: 1000, margin: "0 auto" },
+    title: { fontSize: 26, marginBottom: 20 },
+    loading: { padding: 40 },
+    error: { padding: 40, color: "red" },
+    addBtn: { marginBottom: 20, fontWeight: "bold" },
+    section: {
         border: "1px solid #444",
-        borderRadius: 8,
         padding: 16,
-        marginBottom: 16
+        marginBottom: 20,
+        borderRadius: 8
     },
-    sectionInput: {
-        width: "100%",
-        fontSize: 16,
-        fontWeight: "bold",
-        padding: 8
+    sectionTitle: { width: "100%", fontSize: 18, fontWeight: "bold" },
+    category: {
+        marginTop: 12,
+        padding: 12,
+        borderLeft: "3px solid #555"
     },
-    deleteButton: {
-        marginTop: 10,
+    categoryTitle: { fontWeight: "bold", width: "100%" },
+    item: {
+        display: "flex",
+        gap: 8,
+        marginTop: 6
+    },
+    subBtn: {
+        marginTop: 8,
+        fontSize: 13
+    },
+    remove: {
         color: "red",
         background: "none",
         border: "none",
         cursor: "pointer"
     },
-    saveButton: {
+    saveBtn: {
         marginTop: 30,
         padding: "12px 24px",
         backgroundColor: "#16a34a",
         color: "white",
         fontWeight: "bold",
-        borderRadius: 6,
-        cursor: "pointer"
+        borderRadius: 6
     }
 }
