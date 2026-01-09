@@ -436,7 +436,7 @@ const styles: Record<string, CSSProperties> = {
     }
 }
 
-const modal = {
+const modal: Record<string, CSSProperties> = {
     overlay: {
         position: "fixed",
         inset: 0,
