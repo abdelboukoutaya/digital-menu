@@ -6,28 +6,59 @@ import AdminGuard from "@/components/AdminGuard"
 type Order = {
     _id: string
     clientSlug: string
-    source: string
-    status: string
+    source: "whatsapp" | "form"
+    status: "new" | "processed"
     createdAt: string
 }
 
 export default function AdminOrders() {
     const [orders, setOrders] = useState<Order[]>([])
     const [loading, setLoading] = useState(true)
+    const [updatingId, setUpdatingId] = useState<string | null>(null)
 
-    useEffect(() => {
+    const fetchOrders = async () => {
         const token = localStorage.getItem("admin_token")
         if (!token) return
 
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/orders`, {
-            headers: {
-                Authorization: `Bearer ${token}`
+        const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/admin/orders`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
             }
-        })
-            .then((res) => res.json())
-            .then(setOrders)
-            .finally(() => setLoading(false))
+        )
+
+        const data = await res.json()
+        setOrders(data)
+        setLoading(false)
+    }
+
+    useEffect(() => {
+        fetchOrders()
     }, [])
+
+    const markAsProcessed = async (id: string) => {
+        const token = localStorage.getItem("admin_token")
+        if (!token) return
+
+        setUpdatingId(id)
+
+        await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/admin/orders/${id}`,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ status: "processed" })
+            }
+        )
+
+        await fetchOrders()
+        setUpdatingId(null)
+    }
 
     return (
         <AdminGuard>
@@ -41,13 +72,22 @@ export default function AdminOrders() {
                 )}
 
                 {orders.length > 0 && (
-                    <table border={1} cellPadding={10}>
+                    <table
+                        border={1}
+                        cellPadding={10}
+                        style={{
+                            width: "100%",
+                            borderCollapse: "collapse",
+                            marginTop: 20
+                        }}
+                    >
                         <thead>
                             <tr>
                                 <th>Client</th>
                                 <th>Source</th>
                                 <th>Statut</th>
                                 <th>Date</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -55,9 +95,49 @@ export default function AdminOrders() {
                                 <tr key={o._id}>
                                     <td>{o.clientSlug}</td>
                                     <td>{o.source}</td>
-                                    <td>{o.status}</td>
                                     <td>
-                                        {new Date(o.createdAt).toLocaleString()}
+                                        {o.status === "new" ? (
+                                            <span style={{ color: "#dc2626" }}>
+                                                Nouveau
+                                            </span>
+                                        ) : (
+                                            <span
+                                                style={{ color: "#16a34a" }}
+                                            >
+                                                Traité
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td>
+                                        {new Date(
+                                            o.createdAt
+                                        ).toLocaleString()}
+                                    </td>
+                                    <td>
+                                        {o.status === "new" ? (
+                                            <button
+                                                onClick={() =>
+                                                    markAsProcessed(o._id)
+                                                }
+                                                disabled={
+                                                    updatingId === o._id
+                                                }
+                                                style={{
+                                                    padding: "6px 12px",
+                                                    backgroundColor: "#16a34a",
+                                                    color: "white",
+                                                    borderRadius: 4,
+                                                    border: "none",
+                                                    cursor: "pointer"
+                                                }}
+                                            >
+                                                {updatingId === o._id
+                                                    ? "Traitement…"
+                                                    : "Traiter"}
+                                            </button>
+                                        ) : (
+                                            "—"
+                                        )}
                                     </td>
                                 </tr>
                             ))}
