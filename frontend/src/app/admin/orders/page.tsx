@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import AdminGuard from "@/components/AdminGuard"
 
 type Order = {
     _id: string
@@ -12,100 +13,58 @@ type Order = {
 
 export default function AdminOrders() {
     const [orders, setOrders] = useState<Order[]>([])
-    const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        fetchOrders()
+        const token = localStorage.getItem("admin_token")
+        if (!token) return
+
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/orders`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+            .then((res) => res.json())
+            .then(setOrders)
+            .finally(() => setLoading(false))
     }, [])
 
-    const fetchOrders = async () => {
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/dashboard`, {
-                headers: {
-                    "x-admin-key": process.env.NEXT_PUBLIC_ADMIN_API_KEY as string
-                }
-            })
-
-
-            if (!res.ok) {
-                throw new Error("Erreur chargement commandes")
-            }
-
-            const data = await res.json()
-            setOrders(data)
-        } catch (e) {
-            setError("Impossible de charger les commandes")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const updateStatus = async (id: string, status: string) => {
-        await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/admin/orders/${id}`,
-            {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status })
-            }
-        )
-
-        fetchOrders()
-    }
-
-    if (loading) return <p>Chargement des commandes…</p>
-    if (error) return <p style={{ color: "red" }}>{error}</p>
-
     return (
-        <main style={{ padding: 40 }}>
-            <h2>Commandes (ADMIN)</h2>
+        <AdminGuard>
+            <main style={{ padding: 40 }}>
+                <h1>Commandes</h1>
 
-            {orders.length === 0 && <p>Aucune commande</p>}
+                {loading && <p>Chargement…</p>}
 
-            {orders.length > 0 && (
-                <table border={1} cellPadding={8}>
-                    <thead>
-                        <tr>
-                            <th>Client</th>
-                            <th>Source</th>
-                            <th>Statut</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {orders.map((order) => (
-                            <tr key={order._id}>
-                                <td>{order.clientSlug}</td>
-                                <td>{order.source}</td>
-                                <td>{order.status}</td>
-                                <td>
-                                    {order.status === "new" ? (
-                                        <button
-                                            onClick={() =>
-                                                updateStatus(
-                                                    order._id,
-                                                    "processed"
-                                                )
-                                            }
-                                        >
-                                            Marquer traité
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={() =>
-                                                updateStatus(order._id, "new")
-                                            }
-                                        >
-                                            Repasser nouveau
-                                        </button>
-                                    )}
-                                </td>
+                {!loading && orders.length === 0 && (
+                    <p>Aucune commande</p>
+                )}
+
+                {orders.length > 0 && (
+                    <table border={1} cellPadding={10}>
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Source</th>
+                                <th>Statut</th>
+                                <th>Date</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
-        </main>
+                        </thead>
+                        <tbody>
+                            {orders.map((o) => (
+                                <tr key={o._id}>
+                                    <td>{o.clientSlug}</td>
+                                    <td>{o.source}</td>
+                                    <td>{o.status}</td>
+                                    <td>
+                                        {new Date(o.createdAt).toLocaleString()}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </main>
+        </AdminGuard>
     )
 }
