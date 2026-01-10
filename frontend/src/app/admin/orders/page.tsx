@@ -15,6 +15,7 @@ export default function AdminOrders() {
     const [orders, setOrders] = useState<Order[]>([])
     const [loading, setLoading] = useState(true)
     const [updatingId, setUpdatingId] = useState<string | null>(null)
+    const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
 
     const fetchOrders = async () => {
         const token = localStorage.getItem("admin_token")
@@ -31,13 +32,18 @@ export default function AdminOrders() {
 
         const data = await res.json()
         setOrders(data)
+        setLastUpdate(new Date())
         setLoading(false)
     }
 
+    // 🔄 AUTO-REFRESH (C5)
     useEffect(() => {
         fetchOrders()
+        const interval = setInterval(fetchOrders, 10000)
+        return () => clearInterval(interval)
     }, [])
 
+    // 🟢 ACTION : TRAITER COMMANDE
     const markAsProcessed = async (id: string) => {
         const token = localStorage.getItem("admin_token")
         if (!token) return
@@ -60,10 +66,46 @@ export default function AdminOrders() {
         setUpdatingId(null)
     }
 
+    // 📊 STATS (C4)
+    const total = orders.length
+    const newOrders = orders.filter((o) => o.status === "new").length
+    const processedOrders = orders.filter(
+        (o) => o.status === "processed"
+    ).length
+
     return (
         <AdminGuard>
             <main style={{ padding: 40 }}>
                 <h1>Commandes</h1>
+
+                {/* 📊 DASHBOARD */}
+                <div
+                    style={{
+                        display: "flex",
+                        gap: 20,
+                        marginTop: 20,
+                        marginBottom: 30
+                    }}
+                >
+                    <StatCard label="Total" value={total} />
+                    <StatCard
+                        label="Nouvelles"
+                        value={newOrders}
+                        color="#dc2626"
+                    />
+                    <StatCard
+                        label="Traitées"
+                        value={processedOrders}
+                        color="#16a34a"
+                    />
+                </div>
+
+                {lastUpdate && (
+                    <p style={{ fontSize: 12, opacity: 0.6 }}>
+                        Dernière mise à jour :{" "}
+                        {lastUpdate.toLocaleTimeString()}
+                    </p>
+                )}
 
                 {loading && <p>Chargement…</p>}
 
@@ -146,5 +188,40 @@ export default function AdminOrders() {
                 )}
             </main>
         </AdminGuard>
+    )
+}
+
+/* 🧩 COMPONENT : STAT CARD */
+
+function StatCard({
+    label,
+    value,
+    color
+}: {
+    label: string
+    value: number
+    color?: string
+}) {
+    return (
+        <div
+            style={{
+                padding: 20,
+                minWidth: 140,
+                borderRadius: 8,
+                background: "#111",
+                border: "1px solid #333"
+            }}
+        >
+            <div style={{ fontSize: 14, opacity: 0.7 }}>{label}</div>
+            <div
+                style={{
+                    fontSize: 28,
+                    fontWeight: "bold",
+                    color: color || "white"
+                }}
+            >
+                {value}
+            </div>
+        </div>
     )
 }
