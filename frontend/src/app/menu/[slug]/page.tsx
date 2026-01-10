@@ -96,9 +96,12 @@ export default async function MenuPage({
       )}
 
       {/* 🔹 MODE CATALOGUE */}
-      8{menu.orderMode === "catalogue" && <MenuList sections={menu.sections} />}
+      {menu.orderMode === "catalogue" && (
+        <MenuList sections={menu.sections} />
+      )}
 
-      <OrderButton slug={slug} />
+      {/* 🔹 BOUTON COMMANDE UNIQUEMENT EN MODE FORM */}
+      {menu.orderMode === "form" && <OrderButton slug={slug} />}
 
     </main>
   )
