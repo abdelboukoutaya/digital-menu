@@ -45,6 +45,8 @@ export default function AdminLogin() {
 
             // 🔑 STOCKAGE UNIQUE DU TOKEN
             localStorage.setItem("admin_token", data.token)
+            localStorage.setItem("admin_role", data.role)
+
 
             router.replace("/admin")
         } catch (e) {
