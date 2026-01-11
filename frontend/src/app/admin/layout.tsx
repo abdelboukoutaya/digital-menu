@@ -1,8 +1,8 @@
 "use client"
 
-import React from "react" // ✅ OBLIGATOIRE
+import React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import AdminGuard from "@/components/AdminGuard"
 
 export default function AdminLayout({
@@ -11,6 +11,13 @@ export default function AdminLayout({
     children: React.ReactNode
 }) {
     const pathname = usePathname()
+    const router = useRouter()
+
+    const logout = () => {
+        localStorage.removeItem("admin_token")
+        localStorage.removeItem("admin_role")
+        router.replace("/admin/login")
+    }
 
     return (
         <AdminGuard>
@@ -20,21 +27,16 @@ export default function AdminLayout({
                     <h2 style={styles.logo}>Digital Menu</h2>
 
                     <NavLink href="/admin" label="Dashboard" pathname={pathname} />
-                    <NavLink
-                        href="/admin/clients"
-                        label="Clients"
-                        pathname={pathname}
-                    />
-                    <NavLink
-                        href="/admin/menus"
-                        label="Menus"
-                        pathname={pathname}
-                    />
-                    <NavLink
-                        href="/admin/orders"
-                        label="Commandes"
-                        pathname={pathname}
-                    />
+                    <NavLink href="/admin/clients" label="Clients" pathname={pathname} />
+                    <NavLink href="/admin/menus" label="Menus" pathname={pathname} />
+                    <NavLink href="/admin/orders" label="Commandes" pathname={pathname} />
+
+                    <div style={{ flex: 1 }} />
+
+                    {/* LOGOUT */}
+                    <button onClick={logout} style={styles.logout}>
+                        Déconnexion
+                    </button>
                 </aside>
 
                 {/* CONTENT */}
@@ -81,7 +83,9 @@ const styles: Record<string, React.CSSProperties> = {
         width: 240,
         background: "#0b0f19",
         padding: 20,
-        borderRight: "1px solid #1f2937"
+        borderRight: "1px solid #1f2937",
+        display: "flex",
+        flexDirection: "column"
     },
     logo: {
         fontSize: 20,
@@ -95,6 +99,15 @@ const styles: Record<string, React.CSSProperties> = {
         color: "white",
         textDecoration: "none",
         marginBottom: 6
+    },
+    logout: {
+        marginTop: 20,
+        padding: "10px",
+        borderRadius: 8,
+        background: "#7f1d1d",
+        color: "white",
+        border: "none",
+        cursor: "pointer"
     },
     content: {
         flex: 1,
