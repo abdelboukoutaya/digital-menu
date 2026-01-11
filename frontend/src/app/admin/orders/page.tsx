@@ -16,6 +16,8 @@ export default function AdminOrders() {
     const [loading, setLoading] = useState(true)
     const [updatingId, setUpdatingId] = useState<string | null>(null)
     const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+    const [prevNewCount, setPrevNewCount] = useState<number | null>(null)
+
 
     const fetchOrders = async () => {
         const token = localStorage.getItem("admin_token")
@@ -72,12 +74,56 @@ export default function AdminOrders() {
     const processedOrders = orders.filter(
         (o) => o.status === "processed"
     ).length
+    // 🔔 NOTIFICATIONS (C6)
+    useEffect(() => {
+        if (prevNewCount === null) {
+            setPrevNewCount(newOrders)
+            return
+        }
+
+        if (newOrders > prevNewCount) {
+            // 🔊 Son
+            const audio = new Audio("/notification.mp3")
+            audio.play().catch(() => { })
+
+            // 🧠 Titre navigateur
+            document.title = "(1) Nouvelle commande"
+        }
+
+        if (newOrders === 0) {
+            document.title = "Admin — Commandes"
+        }
+
+        setPrevNewCount(newOrders)
+    }, [newOrders])
 
     return (
         <AdminGuard>
             <main style={{ padding: 40 }}>
-                <h1>Commandes</h1>
+                <h1>
+                    Commandes{" "}
+                    {newOrders > 0 && (
+                        <span
+                            style={{
+                                marginLeft: 10,
+                                padding: "4px 8px",
+                                backgroundColor: "#dc2626",
+                                color: "white",
+                                borderRadius: 6,
+                                fontSize: 12,
+                                fontWeight: "bold"
+                            }}
+                        >
+                            {newOrders} nouvelle{newOrders > 1 ? "s" : ""}
+                        </span>
+                    )}
+                </h1>
 
+                <audio
+                    id="order-sound"
+                    src="/notification.mp3"
+                    preload="auto"
+                />
                 {/* 📊 DASHBOARD */}
                 <div
                     style={{
