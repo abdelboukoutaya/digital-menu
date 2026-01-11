@@ -1,8 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import AdminGuard from "@/components/AdminGuard"
+import { useParams } from "next/navigation"
 
 type Client = {
     _id: string
@@ -11,177 +10,106 @@ type Client = {
     orderMode: string
     theme?: {
         primaryColor?: string
+        font?: string
     }
 }
 
-export default function EditClientPage({
-    params
-}: {
-    params: Promise<{ id: string }>
-}) {
-    const router = useRouter()
-
-    const [clientId, setClientId] = useState<string | null>(null)
+export default function ClientDetailPage() {
+    const { id } = useParams<{ id: string }>()
     const [client, setClient] = useState<Client | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    // 🔹 EXTRAIRE L'ID CORRECTEMENT (APP ROUTER)
     useEffect(() => {
-        const resolveParams = async () => {
-            const resolved = await params
-            setClientId(resolved.id)
-        }
-        resolveParams()
-    }, [params])
-
-    // 🔹 FETCH CLIENT UNE FOIS L'ID DISPONIBLE
-    useEffect(() => {
-        if (!clientId) return
-
-        const fetchClient = async () => {
-            const token = localStorage.getItem("admin_token")
-
-            if (!token) {
-                setError("Non authentifié")
-                setLoading(false)
-                return
-            }
-
-            try {
-                const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients/${clientId}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
-                    }
-                )
-
-                if (res.status === 404) {
-                    setError("Client introuvable")
-                    setLoading(false)
-                    return
-                }
-
-                if (!res.ok) {
-                    throw new Error("Erreur API")
-                }
-
-                const data = await res.json()
-                setClient(data)
-            } catch (e) {
-                setError("Erreur lors du chargement du client")
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchClient()
-    }, [clientId])
-
-    if (loading) {
-        return (
-            <AdminGuard>
-                <p style={{ padding: 40 }}>Chargement…</p>
-            </AdminGuard>
-        )
-    }
-
-    if (error) {
-        return (
-            <AdminGuard>
-                <p style={{ padding: 40, color: "red" }}>{error}</p>
-            </AdminGuard>
-        )
-    }
-
-    if (!client) {
-        return (
-            <AdminGuard>
-                <p style={{ padding: 40 }}>Client introuvable</p>
-            </AdminGuard>
-        )
-    }
-
-    const save = async () => {
         const token = localStorage.getItem("admin_token")
         if (!token) return
 
-        await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients/${client._id}`,
-            {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify(client)
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients/${id}`, {
+            headers: {
+                Authorization: `Bearer ${token}`
             }
-        )
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error("Client introuvable")
+                return res.json()
+            })
+            .then(setClient)
+            .catch(() => setError("Impossible de charger le client"))
+            .finally(() => setLoading(false))
+    }, [id])
 
-        alert("Client sauvegardé")
-        router.push("/admin/clients")
-    }
+    if (loading) return <p>Chargement…</p>
+    if (error) return <p style={{ color: "red" }}>{error}</p>
+    if (!client) return null
 
     return (
-        <AdminGuard>
-            <main style={{ padding: 40 }}>
-                <h1>Éditer le client</h1>
+        <div>
+            <h1 style={{ marginBottom: 10 }}>{client.name}</h1>
+            <p style={{ opacity: 0.7, marginBottom: 20 }}>
+                Slug : <strong>{client.slug}</strong>
+            </p>
+
+            {/* NAVIGATION CLIENT */}
+            <div style={styles.tabs}>
+                <Tab label="Infos" />
+                <Tab label="Menu" />
+                <Tab label="Styles" />
+                <Tab label="Domaines" />
+                <Tab label="Commandes" />
+            </div>
+
+            {/* CONTENU V1 */}
+            <section style={styles.box}>
+                <h2>Informations générales</h2>
 
                 <p>
-                    <strong>{client.name}</strong> ({client.slug})
+                    <strong>Mode de commande :</strong>{" "}
+                    {client.orderMode}
                 </p>
 
-                <div style={{ marginTop: 20 }}>
-                    <label>Mode de commande</label>
-                    <br />
-                    <select
-                        value={client.orderMode}
-                        onChange={(e) =>
-                            setClient({
-                                ...client,
-                                orderMode: e.target.value
-                            })
-                        }
-                    >
-                        <option value="whatsapp">WhatsApp</option>
-                        <option value="form">Formulaire</option>
-                        <option value="catalogue">Catalogue</option>
-                    </select>
-                </div>
+                <p>
+                    <strong>Couleur principale :</strong>{" "}
+                    {client.theme?.primaryColor || "—"}
+                </p>
 
-                <div style={{ marginTop: 20 }}>
-                    <label>Couleur principale</label>
-                    <br />
-                    <input
-                        type="color"
-                        value={client.theme?.primaryColor || "#000000"}
-                        onChange={(e) =>
-                            setClient({
-                                ...client,
-                                theme: {
-                                    primaryColor: e.target.value
-                                }
-                            })
-                        }
-                    />
-                </div>
-
-                <button
-                    onClick={save}
-                    style={{
-                        marginTop: 30,
-                        padding: "10px 20px",
-                        backgroundColor: "#16a34a",
-                        color: "white",
-                        borderRadius: 6,
-                        fontWeight: "bold"
-                    }}
-                >
-                    Sauvegarder
-                </button>
-            </main>
-        </AdminGuard>
+                <p>
+                    <strong>Police :</strong>{" "}
+                    {client.theme?.font || "—"}
+                </p>
+            </section>
+        </div>
     )
+}
+
+/* ───────── COMPONENTS ───────── */
+
+function Tab({ label }: { label: string }) {
+    return (
+        <div style={styles.tab}>
+            {label}
+        </div>
+    )
+}
+
+/* ───────── STYLES ───────── */
+
+const styles: Record<string, React.CSSProperties> = {
+    tabs: {
+        display: "flex",
+        gap: 10,
+        marginBottom: 30
+    },
+    tab: {
+        padding: "8px 14px",
+        borderRadius: 8,
+        background: "#1f2937",
+        cursor: "pointer",
+        fontSize: 14
+    },
+    box: {
+        padding: 20,
+        borderRadius: 12,
+        background: "#111",
+        border: "1px solid #333"
+    }
 }
