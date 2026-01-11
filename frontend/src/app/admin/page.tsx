@@ -1,100 +1,159 @@
 "use client"
 
-import Link from "next/link"
-import AdminGuard from "@/components/AdminGuard"
+import { useEffect, useState } from "react"
+
+type Stats = {
+    clients: number
+    menus: number
+    orders: number
+}
 
 export default function AdminDashboard() {
+    const [stats, setStats] = useState<Stats | null>(null)
+    const [status, setStatus] = useState<"ok" | "error" | "loading">("loading")
+
+    useEffect(() => {
+        const token = localStorage.getItem("admin_token")
+        if (!token) return
+
+        Promise.all([
+            fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/admin/stats`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            ),
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/health`)
+        ])
+            .then(async ([statsRes, healthRes]) => {
+                if (!statsRes.ok || !healthRes.ok) {
+                    throw new Error("API error")
+                }
+
+                const statsData = await statsRes.json()
+                await healthRes.json()
+
+                setStats(statsData)
+                setStatus("ok")
+            })
+            .catch(() => {
+                setStatus("error")
+            })
+    }, [])
+
+    if (status === "loading") {
+        return <p>Chargement du dashboard…</p>
+    }
+
+    if (status === "error") {
+        return (
+            <p style={{ color: "red" }}>
+                Impossible de charger l’état du système
+            </p>
+        )
+    }
+
     return (
-        <AdminGuard>
-            <main style={styles.container}>
-                <h1 style={styles.title}>Dashboard Admin</h1>
+        <div>
+            <h1 style={{ marginBottom: 10 }}>
+                Bienvenue dans Digital Menu CMS
+            </h1>
 
-                <div style={styles.grid}>
-                    <DashboardCard
-                        title="Clients"
-                        description="Gérer les clients, thèmes et modes de commande"
-                        href="/admin/clients"
-                        emoji="👥"
-                    />
+            <p style={{ opacity: 0.7, marginBottom: 30 }}>
+                Tableau de bord — état global du système
+            </p>
 
-                    <DashboardCard
-                        title="Menus"
-                        description="Créer et éditer les menus"
-                        href="/admin/menus"
-                        emoji="📋"
-                    />
+            {/* ÉTAT SYSTÈME */}
+            <div style={styles.systemBox}>
+                <strong>État du système :</strong>{" "}
+                <span style={{ color: "#16a34a" }}>
+                    API opérationnelle
+                </span>
+            </div>
 
-                    <DashboardCard
-                        title="Commandes"
-                        description="Voir et traiter les commandes"
-                        href="/admin/orders"
-                        emoji="🧾"
-                    />
-                </div>
-            </main>
-        </AdminGuard>
+            {/* STATS */}
+            <div style={styles.statsGrid}>
+                <StatCard
+                    label="Clients"
+                    value={stats?.clients ?? 0}
+                />
+                <StatCard
+                    label="Menus"
+                    value={stats?.menus ?? 0}
+                />
+                <StatCard
+                    label="Commandes"
+                    value={stats?.orders ?? 0}
+                />
+            </div>
+
+            {/* MESSAGE ACCUEIL */}
+            <div style={styles.welcomeBox}>
+                <h2>Que souhaitez-vous faire ?</h2>
+                <ul>
+                    <li>➡ Gérer les clients</li>
+                    <li>➡ Créer ou modifier des menus</li>
+                    <li>➡ Suivre les commandes</li>
+                </ul>
+            </div>
+        </div>
     )
 }
 
-/* ───────── COMPONENT ───────── */
+/* ───────── COMPONENTS ───────── */
 
-function DashboardCard({
-    title,
-    description,
-    href,
-    emoji
+function StatCard({
+    label,
+    value
 }: {
-    title: string
-    description: string
-    href: string
-    emoji: string
+    label: string
+    value: number
 }) {
     return (
-        <Link href={href} style={styles.card}>
-            <div style={styles.emoji}>{emoji}</div>
-            <h2 style={styles.cardTitle}>{title}</h2>
-            <p style={styles.cardDesc}>{description}</p>
-        </Link>
+        <div style={styles.card}>
+            <div style={styles.cardLabel}>{label}</div>
+            <div style={styles.cardValue}>{value}</div>
+        </div>
     )
 }
 
 /* ───────── STYLES ───────── */
 
 const styles: Record<string, React.CSSProperties> = {
-    container: {
-        padding: 40,
-        maxWidth: 1000,
-        margin: "0 auto"
-    },
-    title: {
-        fontSize: 28,
+    systemBox: {
+        padding: 16,
+        borderRadius: 8,
+        background: "#052e16",
+        border: "1px solid #166534",
         marginBottom: 30
     },
-    grid: {
+    statsGrid: {
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-        gap: 20
+        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+        gap: 20,
+        marginBottom: 40
     },
     card: {
-        display: "block",
-        padding: 24,
+        padding: 20,
         borderRadius: 12,
         background: "#111",
-        border: "1px solid #333",
-        textDecoration: "none",
-        color: "white",
-        transition: "transform 0.15s ease, box-shadow 0.15s ease"
+        border: "1px solid #333"
     },
-    emoji: {
-        fontSize: 32,
-        marginBottom: 10
-    },
-    cardTitle: {
-        fontSize: 20,
+    cardLabel: {
+        fontSize: 14,
+        opacity: 0.7,
         marginBottom: 6
     },
-    cardDesc: {
-        fontSize: 14,
-        opacity: 0.7
+    cardValue: {
+        fontSize: 32,
+        fontWeight: "bold"
+    },
+    welcomeBox: {
+        padding: 24,
+        borderRadius: 12,
+        background: "#0b0f19",
+        border: "1px solid #1f2937"
     }
 }
