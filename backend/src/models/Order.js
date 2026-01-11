@@ -18,7 +18,12 @@ const OrderSchema = new Schema(
             type: String,
             enum: ["new", "processed"],
             default: "new"
+        },
+        language: {
+            type: String,
+            default: "fr"
         }
+
     },
     { timestamps: true }
 )

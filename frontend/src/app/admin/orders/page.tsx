@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import AdminGuard from "@/components/AdminGuard"
 
 type Order = {
+    language: string
     _id: string
     clientSlug: string
     source: "whatsapp" | "form"
@@ -214,7 +215,8 @@ export default function AdminOrders() {
                                                         updatingId === o._id
                                                     }
                                                     style={{
-                                                        padding: "6px 12px",
+                                                        padding: "10px 16px",
+                                                        minHeight: 44,
                                                         backgroundColor: "#16a34a",
                                                         color: "white",
                                                         borderRadius: 4,

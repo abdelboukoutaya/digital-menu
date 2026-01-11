@@ -18,7 +18,11 @@ router.post("/login", (req, res) => {
         { expiresIn: "1d" }
     )
 
-    res.json({ token })
+    res.json({
+        token,
+        role: "admin"
+    })
+
 })
 
 module.exports = router

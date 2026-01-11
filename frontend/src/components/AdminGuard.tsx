@@ -3,16 +3,18 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 
-type Props = {
+export default function AdminGuard({
+    children
+}: {
     children: React.ReactNode
-}
-
-export default function AdminGuard({ children }: Props) {
+}) {
     const router = useRouter()
 
     useEffect(() => {
         const token = localStorage.getItem("admin_token")
-        if (!token) {
+        const role = localStorage.getItem("admin_role")
+
+        if (!token || role !== "admin") {
             router.replace("/admin/login")
         }
     }, [router])

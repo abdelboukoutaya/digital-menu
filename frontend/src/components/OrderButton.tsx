@@ -25,6 +25,7 @@ export default function OrderButton({ slug }: Props) {
                     },
                     body: JSON.stringify({
                         clientSlug: slug,
+                        language: "fr",
                         items: [
                             {
                                 name: "Commande test",
