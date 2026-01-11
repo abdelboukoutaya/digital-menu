@@ -160,77 +160,81 @@ export default function AdminOrders() {
                 )}
 
                 {orders.length > 0 && (
-                    <table
-                        border={1}
-                        cellPadding={10}
-                        style={{
-                            width: "100%",
-                            borderCollapse: "collapse",
-                            marginTop: 20
-                        }}
-                    >
-                        <thead>
-                            <tr>
-                                <th>Client</th>
-                                <th>Source</th>
-                                <th>Statut</th>
-                                <th>Date</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {orders.map((o) => (
-                                <tr key={o._id}>
-                                    <td>{o.clientSlug}</td>
-                                    <td>{o.source}</td>
-                                    <td>
-                                        {o.status === "new" ? (
-                                            <span style={{ color: "#dc2626" }}>
-                                                Nouveau
-                                            </span>
-                                        ) : (
-                                            <span
-                                                style={{ color: "#16a34a" }}
-                                            >
-                                                Traité
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td>
-                                        {new Date(
-                                            o.createdAt
-                                        ).toLocaleString()}
-                                    </td>
-                                    <td>
-                                        {o.status === "new" ? (
-                                            <button
-                                                onClick={() =>
-                                                    markAsProcessed(o._id)
-                                                }
-                                                disabled={
-                                                    updatingId === o._id
-                                                }
-                                                style={{
-                                                    padding: "6px 12px",
-                                                    backgroundColor: "#16a34a",
-                                                    color: "white",
-                                                    borderRadius: 4,
-                                                    border: "none",
-                                                    cursor: "pointer"
-                                                }}
-                                            >
-                                                {updatingId === o._id
-                                                    ? "Traitement…"
-                                                    : "Traiter"}
-                                            </button>
-                                        ) : (
-                                            "—"
-                                        )}
-                                    </td>
+                    <div style={{ overflowX: "auto" }}>
+                        <table
+                            border={1}
+                            cellPadding={10}
+                            style={{
+                                width: "100%",
+                                borderCollapse: "collapse",
+                                marginTop: 20
+                            }}
+                        >
+                            <thead>
+                                <tr>
+                                    <th>Client</th>
+                                    <th>Source</th>
+                                    <th>Langue</th>
+                                    <th>Statut</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {orders.map((o) => (
+                                    <tr key={o._id}>
+                                        <td>{o.clientSlug}</td>
+                                        <td>{o.source}</td>
+                                        <td>{o.language || "fr"}</td>
+                                        <td>
+                                            {o.status === "new" ? (
+                                                <span style={{ color: "#dc2626" }}>
+                                                    Nouveau
+                                                </span>
+                                            ) : (
+                                                <span
+                                                    style={{ color: "#16a34a" }}
+                                                >
+                                                    Traité
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {new Date(
+                                                o.createdAt
+                                            ).toLocaleString()}
+                                        </td>
+                                        <td>
+                                            {o.status === "new" ? (
+                                                <button
+                                                    onClick={() =>
+                                                        markAsProcessed(o._id)
+                                                    }
+                                                    disabled={
+                                                        updatingId === o._id
+                                                    }
+                                                    style={{
+                                                        padding: "6px 12px",
+                                                        backgroundColor: "#16a34a",
+                                                        color: "white",
+                                                        borderRadius: 4,
+                                                        border: "none",
+                                                        cursor: "pointer"
+                                                    }}
+                                                >
+                                                    {updatingId === o._id
+                                                        ? "Traitement…"
+                                                        : "Traiter"}
+                                                </button>
+                                            ) : (
+                                                "—"
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </main>
         </AdminGuard>
