@@ -25,6 +25,8 @@ app.use(
  */
 app.use("/api/menus", require("./routes/menus.routes"))
 app.use("/api/orders", require("./routes/orders.routes"))
+app.use("/api/admin/orders", adminAuth, require("./routes/admin.orders.routes"))
+app.use("/api/admin/stats", adminAuth, require("./routes/admin.stats.routes"))
 
 /**
  * 🔹 AUTH ADMIN
