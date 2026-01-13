@@ -15,7 +15,7 @@ export default function AdminGuard({
         const role = localStorage.getItem("admin_role")
 
         if (!token || role !== "admin") {
-            router.replace("/admin/login")
+            router.replace("/login")
         }
     }, [router])
 
