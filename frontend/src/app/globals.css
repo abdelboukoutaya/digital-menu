@@ -1,138 +1,63 @@
-/* =========================================================
-   DESIGN SYSTEM – GLOBAL
-   ========================================================= */
-
-:root {
-  /* Colors */
-  --bg-page: #f3f4f6;
-  --bg-card: #ffffff;
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
-  --border: #d1d5db;
-  --primary: #2563eb;
-  --danger: #dc2626;
-
-  /* UI */
-  --radius: 8px;
-  --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.12);
-}
-
-/* =========================================================
-   RESET
-   ========================================================= */
-
-*,
-*::before,
-*::after {
+* {
   box-sizing: border-box;
 }
 
-html,
 body {
   margin: 0;
-  padding: 0;
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
-  background: var(--bg-page);
-  color: var(--text-primary);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  background: #f3f4f6;
+  color: #111827;
 }
 
-/* =========================================================
-   LINKS
-   ========================================================= */
-
+/* LINKS */
 a {
   color: inherit;
   text-decoration: none;
 }
 
-/* =========================================================
-   LOGIN
-   ========================================================= */
+/* CONTAINERS */
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 80px 20px;
+}
 
-.login-container {
+/* LOGIN */
+.login-box {
   width: 360px;
-  background: var(--bg-card);
+  margin: 120px auto;
+  background: white;
   padding: 32px;
-  border-radius: 12px;
-  box-shadow: var(--shadow-card);
+  border-radius: 10px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
 }
 
-.login-container h1 {
+.login-box h1 {
   font-size: 22px;
-  font-weight: 600;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
-.login-container form {
+.login-box form {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.login-container input {
-  height: 44px;
+.login-box input {
+  height: 42px;
   padding: 0 12px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
   font-size: 14px;
-  color: var(--text-primary);
-  background: white;
 }
 
-.login-container input::placeholder {
-  color: var(--text-secondary);
-}
-
-.login-container input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
-}
-
-.login-container button {
-  height: 44px;
-  margin-top: 10px;
-  border-radius: var(--radius);
+.login-box button {
+  height: 42px;
+  border-radius: 6px;
   border: none;
-  background: var(--primary);
+  background: #2563eb;
   color: white;
   font-size: 15px;
-  font-weight: 500;
   cursor: pointer;
-}
-
-.login-container button:hover {
-  opacity: 0.95;
-}
-
-.login-container button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.login-container .error {
-  color: var(--danger);
-  font-size: 13px;
-}
-
-/* =========================================================
-   DARK MODE (PRÊT POUR PLUS TARD)
-   ========================================================= */
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-page: #0b0f19;
-    --bg-card: #111827;
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    --border: #374151;
-  }
 }
