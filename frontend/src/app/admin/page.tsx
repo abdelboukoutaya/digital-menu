@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { setAdminToken } from "@/lib/auth"
 
 export default function AdminLoginPage() {
     const router = useRouter()
@@ -26,7 +27,7 @@ export default function AdminLoginPage() {
             const data = await res.json()
             if (!res.ok) throw new Error(data.message)
 
-            localStorage.setItem("admin_token", data.token)
+            setAdminToken(data.token)
             router.push("/dashboard")
         } catch (err: any) {
             setError(err.message)

@@ -1,15 +1,9 @@
 "use client"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRequireAdmin } from "@/lib/requireAdmin"
 
 export default function DashboardPage() {
-    const router = useRouter()
-
-    useEffect(() => {
-        const token = localStorage.getItem("admin_token")
-        if (!token) router.replace("/admin")
-    }, [router])
+    useRequireAdmin()
 
     return (
         <>
