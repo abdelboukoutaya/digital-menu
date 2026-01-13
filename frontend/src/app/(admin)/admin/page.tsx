@@ -1,159 +1,76 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 
-type Stats = {
-    clients: number
-    menus: number
-    orders: number
-}
+export default function LoginPage() {
+    const router = useRouter()
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState("")
 
-export default function AdminDashboard() {
-    const [stats, setStats] = useState<Stats | null>(null)
-    const [status, setStatus] = useState<"ok" | "error" | "loading">("loading")
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setError("")
+        setLoading(true)
 
-    useEffect(() => {
-        const token = localStorage.getItem("admin_token")
-        if (!token) return
-
-        Promise.all([
-            fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/admin/stats`,
+        try {
+            const res = await fetch(
+                "https://chic-renewal-production.up.railway.app/auth/login",
                 {
+                    method: "POST",
                     headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ email, password }),
                 }
-            ),
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/health`)
-        ])
-            .then(async ([statsRes, healthRes]) => {
-                if (!statsRes.ok || !healthRes.ok) {
-                    throw new Error("API error")
-                }
+            )
 
-                const statsData = await statsRes.json()
-                await healthRes.json()
+            if (!res.ok) {
+                throw new Error("Email ou mot de passe incorrect")
+            }
 
-                setStats(statsData)
-                setStatus("ok")
-            })
-            .catch(() => {
-                setStatus("error")
-            })
-    }, [])
+            const data = await res.json()
 
-    if (status === "loading") {
-        return <p>Chargement du dashboard…</p>
-    }
+            // ⚠️ temporaire (on supprimera ça à l’étape middleware)
+            localStorage.setItem("admin_token", data.accessToken)
 
-    if (status === "error") {
-        return (
-            <p style={{ color: "red" }}>
-                Impossible de charger l’état du système
-            </p>
-        )
+            router.replace("/admin")
+        } catch (err: any) {
+            setError(err.message || "Erreur de connexion")
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
-        <div>
-            <h1 style={{ marginBottom: 10 }}>
-                Bienvenue dans Digital Menu CMS
-            </h1>
+        <div className="login-container">
+            <h1>Admin Login</h1>
 
-            <p style={{ opacity: 0.7, marginBottom: 30 }}>
-                Tableau de bord — état global du système
-            </p>
-
-            {/* ÉTAT SYSTÈME */}
-            <div style={styles.systemBox}>
-                <strong>État du système :</strong>{" "}
-                <span style={{ color: "#16a34a" }}>
-                    API opérationnelle
-                </span>
-            </div>
-
-            {/* STATS */}
-            <div style={styles.statsGrid}>
-                <StatCard
-                    label="Clients"
-                    value={stats?.clients ?? 0}
+            <form onSubmit={handleSubmit}>
+                <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
                 />
-                <StatCard
-                    label="Menus"
-                    value={stats?.menus ?? 0}
-                />
-                <StatCard
-                    label="Commandes"
-                    value={stats?.orders ?? 0}
-                />
-            </div>
 
-            {/* MESSAGE ACCUEIL */}
-            <div style={styles.welcomeBox}>
-                <h2>Que souhaitez-vous faire ?</h2>
-                <ul>
-                    <li>➡ Gérer les clients</li>
-                    <li>➡ Créer ou modifier des menus</li>
-                    <li>➡ Suivre les commandes</li>
-                </ul>
-            </div>
+                <input
+                    type="password"
+                    placeholder="Mot de passe"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                />
+
+                {error && <p className="error">{error}</p>}
+
+                <button type="submit" disabled={loading}>
+                    {loading ? "Connexion..." : "Connexion"}
+                </button>
+            </form>
         </div>
     )
-}
-
-/* ───────── COMPONENTS ───────── */
-
-function StatCard({
-    label,
-    value
-}: {
-    label: string
-    value: number
-}) {
-    return (
-        <div style={styles.card}>
-            <div style={styles.cardLabel}>{label}</div>
-            <div style={styles.cardValue}>{value}</div>
-        </div>
-    )
-}
-
-/* ───────── STYLES ───────── */
-
-const styles: Record<string, React.CSSProperties> = {
-    systemBox: {
-        padding: 16,
-        borderRadius: 8,
-        background: "#052e16",
-        border: "1px solid #166534",
-        marginBottom: 30
-    },
-    statsGrid: {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-        gap: 20,
-        marginBottom: 40
-    },
-    card: {
-        padding: 20,
-        borderRadius: 12,
-        background: "#111",
-        border: "1px solid #333"
-    },
-    cardLabel: {
-        fontSize: 14,
-        opacity: 0.7,
-        marginBottom: 6
-    },
-    cardValue: {
-        fontSize: 32,
-        fontWeight: "bold"
-    },
-    welcomeBox: {
-        padding: 24,
-        borderRadius: 12,
-        background: "#0b0f19",
-        border: "1px solid #1f2937"
-    }
 }
