@@ -1,115 +1,105 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
+import { useRequireAdmin } from "@/lib/requireAdmin"
+import { getAdminToken } from "@/lib/auth"
 
-type Client = {
-    _id: string
-    name: string
-    slug: string
-    orderMode: string
-    theme?: {
-        primaryColor?: string
-        font?: string
-    }
-}
+export default function EditClientPage() {
+    useRequireAdmin()
 
-export default function ClientDetailPage() {
-    const { id } = useParams<{ id: string }>()
-    const [client, setClient] = useState<Client | null>(null)
+    const { id } = useParams()
+    const router = useRouter()
+
+    const [name, setName] = useState("")
+    const [email, setEmail] = useState("")
+    const [error, setError] = useState("")
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        const token = localStorage.getItem("admin_token")
-        if (!token) return
+        async function fetchClient() {
+            try {
+                const token = getAdminToken()
 
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients/${id}`, {
-            headers: {
-                Authorization: `Bearer ${token}`
+                const res = await fetch(
+                    `https://chic-renewal-production.up.railway.app/api/admin/clients/${id}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                )
+
+                if (!res.ok) {
+                    throw new Error("Impossible de charger le client")
+                }
+
+                const data = await res.json()
+                setName(data.name)
+                setEmail(data.email)
+            } catch (err: any) {
+                setError(err.message)
+            } finally {
+                setLoading(false)
             }
-        })
-            .then((res) => {
-                if (!res.ok) throw new Error("Client introuvable")
-                return res.json()
-            })
-            .then(setClient)
-            .catch(() => setError("Impossible de charger le client"))
-            .finally(() => setLoading(false))
+        }
+
+        fetchClient()
     }, [id])
 
-    if (loading) return <p>Chargement…</p>
-    if (error) return <p style={{ color: "red" }}>{error}</p>
-    if (!client) return null
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault()
 
-    return (
-        <div>
-            <h1 style={{ marginBottom: 10 }}>{client.name}</h1>
-            <p style={{ opacity: 0.7, marginBottom: 20 }}>
-                Slug : <strong>{client.slug}</strong>
-            </p>
+        try {
+            const token = getAdminToken()
 
-            {/* NAVIGATION CLIENT */}
-            <div style={styles.tabs}>
-                <Tab label="Infos" />
-                <Tab label="Menu" />
-                <Tab label="Styles" />
-                <Tab label="Domaines" />
-                <Tab label="Commandes" />
-            </div>
+            const res = await fetch(
+                `https://chic-renewal-production.up.railway.app/api/admin/clients/${id}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ name, email }),
+                }
+            )
 
-            {/* CONTENU V1 */}
-            <section style={styles.box}>
-                <h2>Informations générales</h2>
+            if (!res.ok) {
+                throw new Error("Échec de la mise à jour")
+            }
 
-                <p>
-                    <strong>Mode de commande :</strong>{" "}
-                    {client.orderMode}
-                </p>
-
-                <p>
-                    <strong>Couleur principale :</strong>{" "}
-                    {client.theme?.primaryColor || "—"}
-                </p>
-
-                <p>
-                    <strong>Police :</strong>{" "}
-                    {client.theme?.font || "—"}
-                </p>
-            </section>
-        </div>
-    )
-}
-
-/* ───────── COMPONENTS ───────── */
-
-function Tab({ label }: { label: string }) {
-    return (
-        <div style={styles.tab}>
-            {label}
-        </div>
-    )
-}
-
-/* ───────── STYLES ───────── */
-
-const styles: Record<string, React.CSSProperties> = {
-    tabs: {
-        display: "flex",
-        gap: 10,
-        marginBottom: 30
-    },
-    tab: {
-        padding: "8px 14px",
-        borderRadius: 8,
-        background: "#1f2937",
-        cursor: "pointer",
-        fontSize: 14
-    },
-    box: {
-        padding: 20,
-        borderRadius: 12,
-        background: "#111",
-        border: "1px solid #333"
+            router.push("/dashboard/clients")
+        } catch (err: any) {
+            setError(err.message)
+        }
     }
+
+    if (loading) return <p>Chargement...</p>
+
+    return (
+        <>
+            <h1>Éditer client</h1>
+
+            <form onSubmit={handleSubmit} style={{ maxWidth: 400 }}>
+                <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Nom"
+                    required
+                />
+
+                <input
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Email"
+                    required
+                />
+
+                {error && <p style={{ color: "red" }}>{error}</p>}
+
+                <button type="submit">Enregistrer</button>
+            </form>
+        </>
+    )
 }
