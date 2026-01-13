@@ -1,138 +1,123 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import AdminGuard from "@/components/AdminGuard"
-import AdminLogout from "@/components/AdminLogout"
+import Link from "next/link"
 
 type Client = {
     _id: string
     name: string
     slug: string
     orderMode: string
-    theme?: {
-        primaryColor?: string
-    }
+    menuStyle?: string
 }
 
-export default function AdminClientsPage() {
+export default function AdminClientsDashboard() {
     const [clients, setClients] = useState<Client[]>([])
-    const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const fetchClients = async () => {
-            const token = localStorage.getItem("admin_token")
+        const token = localStorage.getItem("admin_token")
+        if (!token) return
 
-            if (!token) {
-                setError("Non authentifié")
-                setLoading(false)
-                return
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients`, {
+            headers: {
+                Authorization: `Bearer ${token}`
             }
-
-            try {
-                const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
-                    }
-                )
-
-                if (!res.ok) {
-                    throw new Error("Erreur API")
-                }
-
-                const data = await res.json()
-                setClients(data)
-            } catch (e) {
-                setError("Impossible de charger les clients")
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchClients()
+        })
+            .then((res) => res.json())
+            .then(setClients)
+            .finally(() => setLoading(false))
     }, [])
 
+    if (loading) return <p>Chargement des clients…</p>
+
     return (
-        <AdminGuard>
-            <main style={{ padding: 40 }}>
-                <h1>Clients</h1>
+        <div>
+            <h1 style={{ marginBottom: 20 }}>Clients</h1>
 
-                <AdminLogout />
+            <div style={styles.grid}>
+                {clients.map((client) => (
+                    <div key={client._id} style={styles.card}>
+                        <div style={styles.header}>
+                            <strong>{client.name}</strong>
+                            <span style={styles.statusOnline}>● Online</span>
+                        </div>
 
-                {loading && <p>Chargement…</p>}
+                        <p style={styles.slug}>
+                            {client.slug}.digitalmenu.app
+                        </p>
 
-                {error && (
-                    <p style={{ color: "red", marginTop: 20 }}>
-                        {error}
-                    </p>
-                )}
+                        <div style={styles.meta}>
+                            <Meta label="Menus" value="1" />
+                            <Meta label="Commandes" value="—" />
+                            <Meta
+                                label="Style"
+                                value={client.menuStyle || "classic"}
+                            />
+                        </div>
 
-                {!loading && !error && clients.length === 0 && (
-                    <p>Aucun client trouvé</p>
-                )}
-
-                {!loading && clients.length > 0 && (
-                    <table
-                        border={1}
-                        cellPadding={10}
-                        style={{
-                            marginTop: 30,
-                            width: "100%",
-                            borderCollapse: "collapse"
-                        }}
-                    >
-                        <thead>
-                            <tr>
-                                <th>Nom</th>
-                                <th>Slug</th>
-                                <th>Couleur</th>
-                                <th>Mode commande</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {clients.map((client) => (
-                                <tr key={client._id}>
-                                    <td>{client.name}</td>
-                                    <td>{client.slug}</td>
-                                    <td>
-                                        <span
-                                            style={{
-                                                display: "inline-block",
-                                                width: 18,
-                                                height: 18,
-                                                backgroundColor:
-                                                    client.theme
-                                                        ?.primaryColor ||
-                                                    "#ccc",
-                                                borderRadius: 4,
-                                                border: "1px solid #555"
-                                            }}
-                                        />
-                                    </td>
-                                    <td>{client.orderMode}</td>
-                                    <td>
-                                        <a
-                                            href={`/admin/clients/${client._id}`}
-                                            style={{
-                                                color: "#4ade80",
-                                                fontWeight: "bold",
-                                                textDecoration:
-                                                    "underline"
-                                            }}
-                                        >
-                                            Éditer
-                                        </a>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </main>
-        </AdminGuard>
+                        <Link
+                            href={`/admin/clients/${client._id}`}
+                            style={styles.link}
+                        >
+                            Gérer le client →
+                        </Link>
+                    </div>
+                ))}
+            </div>
+        </div>
     )
+}
+
+/* ───────── COMPONENTS ───────── */
+
+function Meta({ label, value }: { label: string; value: string }) {
+    return (
+        <div>
+            <div style={{ fontSize: 12, opacity: 0.6 }}>{label}</div>
+            <div style={{ fontWeight: "bold" }}>{value}</div>
+        </div>
+    )
+}
+
+/* ───────── STYLES ───────── */
+
+const styles: Record<string, React.CSSProperties> = {
+    grid: {
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+        gap: 20
+    },
+    card: {
+        padding: 20,
+        borderRadius: 12,
+        background: "#0b0f19",
+        border: "1px solid #1f2937"
+    },
+    header: {
+        display: "flex",
+        justifyContent: "space-between",
+        marginBottom: 6
+    },
+    statusOnline: {
+        color: "#16a34a",
+        fontSize: 12
+    },
+    slug: {
+        fontSize: 13,
+        opacity: 0.7,
+        marginBottom: 12
+    },
+    meta: {
+        display: "flex",
+        justifyContent: "space-between",
+        marginBottom: 14
+    },
+    link: {
+        display: "inline-block",
+        marginTop: 10,
+        fontSize: 14,
+        color: "#38bdf8",
+        textDecoration: "none"
+    }
 }
