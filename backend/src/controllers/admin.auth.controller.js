@@ -1,8 +1,5 @@
 const jwt = require("jsonwebtoken")
 
-/**
- * LOGIN ADMIN
- */
 exports.adminLogin = (req, res) => {
     const { email, password } = req.body
 
@@ -23,7 +20,7 @@ exports.adminLogin = (req, res) => {
 
     const token = jwt.sign(
         { role: "admin" },
-        process.env.JWT_SECRET,
+        process.env.ADMIN_JWT_SECRET,
         { expiresIn: "1d" }
     )
 

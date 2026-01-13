@@ -30,7 +30,7 @@ app.get("/api/health", (req, res) => {
 
 /**
  * AUTH ADMIN (NON PROTÉGÉE)
- * URL FINALE : POST /api/admin/login
+ * POST /api/admin/login
  */
 app.use("/api/admin", require("./routes/admin.auth.routes"))
 
