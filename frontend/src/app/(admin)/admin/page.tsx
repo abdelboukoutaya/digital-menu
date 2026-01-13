@@ -28,8 +28,10 @@ export default function LoginPage() {
             )
 
             if (!res.ok) {
-                throw new Error("Email ou mot de passe incorrect")
+                const text = await res.text()
+                throw new Error(`Erreur backend: ${res.status} - ${text}`)
             }
+
 
             const data = await res.json()
 
