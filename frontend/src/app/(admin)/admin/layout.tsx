@@ -18,8 +18,7 @@ export default function AdminLayout({
         localStorage.removeItem("admin_role")
         router.replace("/admin/login")
     }
-
-    return (
+    if (pathname === "/admin/login") return (
         <AdminGuard>
             <div style={styles.wrapper}>
                 {/* SIDEBAR */}
