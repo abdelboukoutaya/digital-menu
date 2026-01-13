@@ -1,7 +1,7 @@
 const express = require("express")
 const cors = require("cors")
 
-const adminAuth = require("./middlewares/adminAuth") // ✅ AVANT utilisation
+const adminAuth = require("./middlewares/adminAuth")
 
 const app = express()
 
@@ -13,7 +13,7 @@ app.use(
     cors({
         origin: "*",
         methods: ["GET", "POST", "PUT", "DELETE"],
-        allowedHeaders: ["Content-Type", "Authorization"]
+        allowedHeaders: ["Content-Type", "Authorization"],
     })
 )
 
@@ -21,13 +21,22 @@ app.use(
 
 app.use("/api/menus", require("./routes/menus.routes"))
 app.use("/api/orders", require("./routes/orders.routes"))
+
 app.get("/api/health", (req, res) => {
     res.json({ status: "ok" })
 })
 
-/* ───────── ROUTES ADMIN (PROTÉGÉES) ───────── */
+/* ───────── ROUTES ADMIN ───────── */
 
-app.use("/api/admin/login", require("./routes/admin.auth.routes"))
+/**
+ * AUTH ADMIN (NON PROTÉGÉE)
+ * URL FINALE : POST /api/admin/login
+ */
+app.use("/api/admin", require("./routes/admin.auth.routes"))
+
+/**
+ * ROUTES ADMIN PROTÉGÉES
+ */
 app.use("/api/admin/clients", adminAuth, require("./routes/admin.clients.routes"))
 app.use("/api/admin/menus", adminAuth, require("./routes/admin.menus.routes"))
 app.use("/api/admin/orders", adminAuth, require("./routes/admin.orders.routes"))

@@ -1,8 +1,11 @@
-import express from "express"
-import { adminLogin } from "../controllers/admin.auth.controller.js"
-
+const express = require("express")
 const router = express.Router()
 
+const { adminLogin } = require("../controllers/admin.auth.controller")
+
+/**
+ * POST /api/admin/login
+ */
 router.post("/login", adminLogin)
 
-export default router
+module.exports = router

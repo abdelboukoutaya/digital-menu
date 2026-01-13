@@ -1,28 +1,34 @@
-import { config } from "../config/env.js"
-import { generateAdminToken } from "../utils/jwt.js"
+const jwt = require("jsonwebtoken")
 
-export function adminLogin(req, res) {
+/**
+ * LOGIN ADMIN
+ */
+exports.adminLogin = (req, res) => {
     const { email, password } = req.body
 
     if (!email || !password) {
         return res.status(400).json({
-            message: "Email et mot de passe requis"
+            message: "Email et mot de passe requis",
         })
     }
 
     if (
-        email !== config.ADMIN_EMAIL ||
-        password !== config.ADMIN_PASSWORD
+        email !== process.env.ADMIN_EMAIL ||
+        password !== process.env.ADMIN_PASSWORD
     ) {
         return res.status(401).json({
-            message: "Identifiants invalides"
+            message: "Identifiants invalides",
         })
     }
 
-    const token = generateAdminToken()
+    const token = jwt.sign(
+        { role: "admin" },
+        process.env.JWT_SECRET,
+        { expiresIn: "1d" }
+    )
 
     return res.json({
         token,
-        role: "admin"
+        role: "admin",
     })
 }
