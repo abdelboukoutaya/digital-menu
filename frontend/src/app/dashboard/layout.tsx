@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { clearAdminToken } from "@/lib/auth"
 
 export default function DashboardLayout({
@@ -9,6 +9,7 @@ export default function DashboardLayout({
 }: {
     children: React.ReactNode
 }) {
+    const pathname = usePathname()
     const router = useRouter()
 
     function logout() {
@@ -16,8 +17,28 @@ export default function DashboardLayout({
         router.replace("/admin")
     }
 
+    function NavItem({ href, label }: { href: string; label: string }) {
+        const active = pathname === href
+
+        return (
+            <Link
+                href={href}
+                style={{
+                    padding: "10px 14px",
+                    borderRadius: 6,
+                    background: active ? "#1f2937" : "transparent",
+                    color: "white",
+                    textDecoration: "none",
+                }}
+            >
+                {label}
+            </Link>
+        )
+    }
+
     return (
         <div style={{ display: "flex", minHeight: "100vh" }}>
+            {/* SIDEBAR */}
             <aside
                 style={{
                     width: 240,
@@ -26,15 +47,15 @@ export default function DashboardLayout({
                     padding: 20,
                     display: "flex",
                     flexDirection: "column",
-                    gap: 12,
+                    gap: 8,
                 }}
             >
                 <h2 style={{ marginBottom: 30 }}>Digital Menu</h2>
 
-                <Link href="/dashboard">Dashboard</Link>
-                <Link href="/dashboard/clients">Clients</Link>
-                <Link href="/dashboard/menus">Menus</Link>
-                <Link href="/dashboard/orders">Commandes</Link>
+                <NavItem href="/dashboard" label="Dashboard" />
+                <NavItem href="/dashboard/clients" label="Clients" />
+                <NavItem href="/dashboard/menus" label="Menus" />
+                <NavItem href="/dashboard/orders" label="Commandes" />
 
                 <div style={{ flex: 1 }} />
 
@@ -53,7 +74,24 @@ export default function DashboardLayout({
                 </button>
             </aside>
 
-            <main style={{ flex: 1, padding: 40 }}>{children}</main>
+            {/* CONTENT */}
+            <div style={{ flex: 1 }}>
+                {/* HEADER */}
+                <header
+                    style={{
+                        height: 60,
+                        borderBottom: "1px solid #e5e7eb",
+                        padding: "0 24px",
+                        display: "flex",
+                        alignItems: "center",
+                        background: "white",
+                    }}
+                >
+                    <strong>Espace Administrateur</strong>
+                </header>
+
+                <main style={{ padding: 32 }}>{children}</main>
+            </div>
         </div>
     )
 }

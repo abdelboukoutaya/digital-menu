@@ -7,8 +7,13 @@ export default function DashboardPage() {
 
     return (
         <>
-            <h1>Dashboard Administrateur</h1>
-            <p>Bienvenue dans le tableau de bord de Digital Menu.</p>
+            <h1 style={{ fontSize: 28, marginBottom: 12 }}>
+                Tableau de bord
+            </h1>
+
+            <p>
+                Gérez vos clients, menus et commandes depuis cet espace.
+            </p>
         </>
     )
 }
