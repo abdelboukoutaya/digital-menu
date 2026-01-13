@@ -8,20 +8,13 @@ export default function DashboardPage() {
 
     useEffect(() => {
         const token = localStorage.getItem("admin_token")
-        if (!token) {
-            router.replace("/admin")
-        }
+        if (!token) router.replace("/admin")
     }, [router])
 
     return (
-        <main style={{ padding: 40 }}>
-            <h1 style={{ fontSize: 32, marginBottom: 20 }}>
-                Dashboard Administrateur
-            </h1>
-
-            <p>
-                Bienvenue dans le tableau de bord de Digital Menu.
-            </p>
-        </main>
+        <>
+            <h1>Dashboard Administrateur</h1>
+            <p>Bienvenue dans le tableau de bord de Digital Menu.</p>
+        </>
     )
 }
