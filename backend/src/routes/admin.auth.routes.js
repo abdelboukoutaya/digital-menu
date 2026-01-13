@@ -1,28 +1,8 @@
-const express = require("express")
-const jwt = require("jsonwebtoken")
+import express from "express"
+import { adminLogin } from "../controllers/admin.auth.controller.js"
+
 const router = express.Router()
 
-router.post("/login", (req, res) => {
-    const { email, password } = req.body
+router.post("/login", adminLogin)
 
-    if (
-        email !== process.env.ADMIN_EMAIL ||
-        password !== process.env.ADMIN_PASSWORD
-    ) {
-        return res.status(401).json({ message: "Invalid credentials" })
-    }
-
-    const token = jwt.sign(
-        { email },
-        process.env.ADMIN_JWT_SECRET,
-        { expiresIn: "1d" }
-    )
-
-    res.json({
-        token,
-        role: "admin"
-    })
-
-})
-
-module.exports = router
+export default router
