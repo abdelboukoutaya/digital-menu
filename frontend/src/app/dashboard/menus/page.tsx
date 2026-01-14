@@ -37,7 +37,17 @@ export default function MenusPage() {
                 }
 
                 const data = await res.json()
-                setMenus(data)
+
+                // ✅ ADAPTATION À LA RÉPONSE BACKEND
+                if (Array.isArray(data)) {
+                    setMenus(data)
+                } else if (Array.isArray(data.menus)) {
+                    setMenus(data.menus)
+                } else if (Array.isArray(data.data)) {
+                    setMenus(data.data)
+                } else {
+                    setMenus([])
+                }
             } catch (err: any) {
                 setError(err.message)
             } finally {
@@ -55,31 +65,35 @@ export default function MenusPage() {
         <>
             <h1>Menus</h1>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Prix</th>
-                        <th />
-                    </tr>
-                </thead>
-                <tbody>
-                    {menus.map((menu) => (
-                        <tr key={menu._id}>
-                            <td>{menu.name}</td>
-                            <td>{menu.price ?? "-"}</td>
-                            <td>
-                                <Link
-                                    href={`/dashboard/menus/${menu._id}`}
-                                    className="action-link"
-                                >
-                                    Éditer
-                                </Link>
-                            </td>
+            {menus.length === 0 ? (
+                <p>Aucun menu trouvé.</p>
+            ) : (
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Prix</th>
+                            <th />
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {menus.map((menu) => (
+                            <tr key={menu._id}>
+                                <td>{menu.name}</td>
+                                <td>{menu.price ?? "-"}</td>
+                                <td>
+                                    <Link
+                                        href={`/dashboard/menus/${menu._id}`}
+                                        className="action-link"
+                                    >
+                                        Éditer
+                                    </Link>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
         </>
     )
 }
