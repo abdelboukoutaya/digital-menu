@@ -17,14 +17,15 @@ export default function ProductsPage() {
     useRequireAdmin()
 
     const { menuId, sectionIndex, categoryIndex } = useParams<any>()
-
     const s = Number(sectionIndex)
     const c = Number(categoryIndex)
 
+    const [menu, setMenu] = useState<any>(null)
     const [items, setItems] = useState<Item[]>([])
     const [menuType, setMenuType] = useState<"catalogue" | "boutique">("catalogue")
     const [loading, setLoading] = useState(true)
 
+    /* ───────── LOAD MENU ───────── */
     useEffect(() => {
         fetch(`${API}/api/admin/menus/${menuId}`, {
             headers: {
@@ -32,14 +33,18 @@ export default function ProductsPage() {
             },
         })
             .then((r) => r.json())
-            .then((menu) => {
-                setItems(menu.sections[s].categories[c].items || [])
-                setMenuType(menu.menuType || "catalogue")
+            .then((data) => {
+                setMenu(data)
+                setMenuType(data.menuType || "catalogue")
+                setItems(data.sections[s].categories[c].items || [])
                 setLoading(false)
             })
     }, [menuId, s, c])
 
+    /* ───────── SAVE ───────── */
     function saveAll() {
+        if (!menu) return
+
         if (
             menuType === "boutique" &&
             items.some((i) => !i.price || i.price.trim() === "")
@@ -48,40 +53,48 @@ export default function ProductsPage() {
             return
         }
 
+        const updatedMenu = {
+            ...menu,
+            sections: menu.sections.map((sec: any, si: number) =>
+                si === s
+                    ? {
+                        ...sec,
+                        categories: sec.categories.map((cat: any, ci: number) =>
+                            ci === c ? { ...cat, items } : cat
+                        ),
+                    }
+                    : sec
+            ),
+        }
+
         fetch(`${API}/api/admin/menus/${menuId}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${getAdminToken()}`,
             },
-            body: JSON.stringify({
-                sections: (prev: any) => {
-                    prev[s].categories[c].items = items
-                    return prev
-                },
-            }),
-        }).then(() => alert("Menu enregistré"))
+            body: JSON.stringify(updatedMenu),
+        }).then(() => alert("Produits enregistrés"))
     }
 
     if (loading) return <p>Chargement…</p>
 
     return (
         <>
-            {/* BREADCRUMB */}
+            {/* ───────── BREADCRUMB ───────── */}
             <nav style={{ marginBottom: 20 }}>
                 <Link href="/dashboard/menus">Menus</Link> {" > "}
                 <Link href={`/dashboard/menus/${menuId}`}>Menu</Link> {" > "}
-                <Link href={`/dashboard/menus/${menuId}/sections`}>Sections</Link> {" > "}
-                <Link
-                    href={`/dashboard/menus/${menuId}/sections/${s}`}
-                >
+                <Link href={`/dashboard/menus/${menuId}/sections`}>Sections</Link>{" "}
+                {" > "}
+                <Link href={`/dashboard/menus/${menuId}/sections/${s}`}>
                     Catégories
-                </Link>
+                </Link>{" "}
                 {" > "}
                 <strong>Produits</strong>
             </nav>
 
-            {/* ACTIONS */}
+            {/* ───────── HEADER ───────── */}
             <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <h1>Produits</h1>
                 <button onClick={saveAll}>💾 Enregistrer</button>
