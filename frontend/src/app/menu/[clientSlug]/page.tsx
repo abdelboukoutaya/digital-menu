@@ -5,6 +5,8 @@ import { useParams } from "next/navigation"
 
 const API = "https://chic-renewal-production.up.railway.app"
 
+/* ───────── TYPES ───────── */
+
 type Item = {
   name: string
   price?: string
@@ -20,17 +22,42 @@ type Section = {
   categories: Category[]
 }
 
-type Menu = {
+type MenuResponse = {
   clientSlug?: string
-  language?: string
   sections?: Section[]
+  menuType?: "catalogue" | "boutique"
   orderMode?: "none" | "whatsapp" | "form"
-  whatsappNumber?: string
+  whatsappNumber?: string | null
 }
+
+/* ───────── HELPERS ───────── */
+
+function buildWhatsAppLink(
+  whatsappNumber: string,
+  restaurantName: string,
+  items: Item[]
+) {
+  const cleanNumber = whatsappNumber.replace(/\D/g, "")
+
+  const message = encodeURIComponent(
+    `Bonjour,\n\nJe souhaite commander chez *${restaurantName}* :\n\n` +
+    items
+      .map(
+        (i) =>
+          `• ${i.name}${i.price ? ` — ${i.price}` : ""}`
+      )
+      .join("\n") +
+    `\n\nMerci.`
+  )
+
+  return `https://wa.me/${cleanNumber}?text=${message}`
+}
+
+/* ───────── PAGE ───────── */
 
 export default function PublicMenuPage() {
   const { clientSlug } = useParams<{ clientSlug: string }>()
-  const [menu, setMenu] = useState<Menu | null>(null)
+  const [menu, setMenu] = useState<MenuResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -56,18 +83,33 @@ export default function PublicMenuPage() {
       ? menu.clientSlug.replace(/-/g, " ")
       : clientSlug.replace(/-/g, " ")
 
-  const whatsappLink =
-    menu.orderMode === "whatsapp" && menu.whatsappNumber
-      ? `https://wa.me/${menu.whatsappNumber.replace(/\D/g, "")}`
-      : null
+  const allItems = sections.flatMap((s) =>
+    s.categories.flatMap((c) => c.items)
+  )
+
+  const showWhatsAppButton =
+    menu.menuType === "boutique" &&
+    menu.orderMode === "whatsapp" &&
+    typeof menu.whatsappNumber === "string" &&
+    menu.whatsappNumber.length > 0
+
+  const whatsappLink = showWhatsAppButton
+    ? buildWhatsAppLink(
+      menu.whatsappNumber!,
+      displayName,
+      allItems
+    )
+    : null
 
   return (
     <main style={{ padding: 20, maxWidth: 900, margin: "0 auto" }}>
-      <h1 style={{ textTransform: "capitalize", marginBottom: 30 }}>
+      <h1 style={{ marginBottom: 30, textTransform: "capitalize" }}>
         {displayName}
       </h1>
 
-      {sections.length === 0 && <p>Aucun menu disponible</p>}
+      {sections.length === 0 && (
+        <p>Aucun menu disponible</p>
+      )}
 
       {sections.map((section, si) => (
         <section key={si} style={{ marginBottom: 40 }}>
@@ -89,7 +131,9 @@ export default function PublicMenuPage() {
                     }}
                   >
                     <span>{item.name}</span>
-                    {item.price && <strong>{item.price}</strong>}
+                    {item.price && (
+                      <strong>{item.price}</strong>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -99,52 +143,26 @@ export default function PublicMenuPage() {
       ))}
 
       {/* ───────── BOUTON COMMANDER ───────── */}
-      {menu.orderMode === "whatsapp" && whatsappLink && (
+      {whatsappLink && (
         <a
           href={whatsappLink}
           target="_blank"
           rel="noopener noreferrer"
-          style={styles.whatsapp}
+          style={{
+            position: "fixed",
+            bottom: 20,
+            right: 20,
+            background: "#25D366",
+            color: "white",
+            padding: "14px 20px",
+            borderRadius: 30,
+            fontWeight: "bold",
+            textDecoration: "none",
+          }}
         >
           Commander via WhatsApp
         </a>
       )}
-
-      {menu.orderMode === "form" && (
-        <a
-          href={`/menu/${clientSlug}/order`}
-          style={styles.form}
-        >
-          Commander
-        </a>
-      )}
     </main>
   )
-}
-
-/* ───────── STYLES ───────── */
-
-const styles: Record<string, React.CSSProperties> = {
-  whatsapp: {
-    position: "fixed",
-    bottom: 20,
-    right: 20,
-    background: "#25D366",
-    color: "white",
-    padding: "14px 20px",
-    borderRadius: 30,
-    fontWeight: "bold",
-    textDecoration: "none",
-  },
-  form: {
-    position: "fixed",
-    bottom: 20,
-    right: 20,
-    background: "#2563eb",
-    color: "white",
-    padding: "14px 20px",
-    borderRadius: 30,
-    fontWeight: "bold",
-    textDecoration: "none",
-  },
 }
