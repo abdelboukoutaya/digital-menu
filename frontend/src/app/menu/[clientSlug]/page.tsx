@@ -22,146 +22,174 @@ type Section = {
   categories: Category[]
 }
 
-type MenuResponse = {
-  clientSlug?: string
-  sections?: Section[]
-  menuType?: "catalogue" | "boutique"
-  orderMode?: "none" | "whatsapp" | "form"
-  whatsappNumber?: string | null
+type Menu = {
+  clientSlug: string
+  sections: Section[]
+  menuType: "catalogue" | "boutique"
+  orderMode: "none" | "whatsapp" | "form"
+  whatsappNumber?: string
 }
 
 /* ───────── HELPERS ───────── */
 
 function buildWhatsAppLink(
-  whatsappNumber: string,
-  restaurantName: string,
+  phone: string,
+  restaurant: string,
   items: Item[]
 ) {
-  const cleanNumber = whatsappNumber.replace(/\D/g, "")
+  const number = phone.replace(/\D/g, "")
 
   const message = encodeURIComponent(
-    `Bonjour,\n\nJe souhaite commander chez *${restaurantName}* :\n\n` +
+    `Bonjour,\n\nJe souhaite commander chez *${restaurant}* :\n\n` +
     items
       .map(
-        (i) =>
-          `• ${i.name}${i.price ? ` — ${i.price}` : ""}`
+        (i) => `• ${i.name}${i.price ? ` — ${i.price}` : ""}`
       )
       .join("\n") +
     `\n\nMerci.`
   )
 
-  return `https://wa.me/${cleanNumber}?text=${message}`
+  return `https://wa.me/${number}?text=${message}`
 }
 
 /* ───────── PAGE ───────── */
 
 export default function PublicMenuPage() {
   const { clientSlug } = useParams<{ clientSlug: string }>()
-  const [menu, setMenu] = useState<MenuResponse | null>(null)
+  const [menu, setMenu] = useState<Menu | null>(null)
+  const [cart, setCart] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
 
   useEffect(() => {
     fetch(`${API}/api/menus/${clientSlug}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Menu introuvable")
-        return res.json()
-      })
+      .then((res) => res.json())
       .then(setMenu)
-      .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
   }, [clientSlug])
 
   if (loading) return <p>Chargement…</p>
-  if (error) return <p>{error}</p>
-  if (!menu) return <p>Menu indisponible</p>
+  if (!menu) return <p>Menu introuvable</p>
 
-  const sections = Array.isArray(menu.sections) ? menu.sections : []
+  const restaurantName = menu.clientSlug.replace(/-/g, " ")
 
-  const displayName =
-    typeof menu.clientSlug === "string"
-      ? menu.clientSlug.replace(/-/g, " ")
-      : clientSlug.replace(/-/g, " ")
-
-  const allItems = sections.flatMap((s) =>
-    s.categories.flatMap((c) => c.items)
-  )
-
-  const showWhatsAppButton =
+  const canOrder =
     menu.menuType === "boutique" &&
     menu.orderMode === "whatsapp" &&
-    typeof menu.whatsappNumber === "string" &&
-    menu.whatsappNumber.length > 0
+    menu.whatsappNumber
 
-  const whatsappLink = showWhatsAppButton
-    ? buildWhatsAppLink(
-      menu.whatsappNumber!,
-      displayName,
-      allItems
-    )
-    : null
+  const whatsappLink =
+    canOrder && cart.length > 0
+      ? buildWhatsAppLink(
+        menu.whatsappNumber!,
+        restaurantName,
+        cart
+      )
+      : null
 
   return (
-    <main style={{ padding: 20, maxWidth: 900, margin: "0 auto" }}>
-      <h1 style={{ marginBottom: 30, textTransform: "capitalize" }}>
-        {displayName}
-      </h1>
+    <main style={{ maxWidth: 900, margin: "0 auto", padding: 20 }}>
+      <h1 style={{ marginBottom: 30 }}>{restaurantName}</h1>
 
-      {sections.length === 0 && (
-        <p>Aucun menu disponible</p>
-      )}
-
-      {sections.map((section, si) => (
+      {menu.sections.map((section, si) => (
         <section key={si} style={{ marginBottom: 40 }}>
           <h2>{section.title}</h2>
 
           {section.categories.map((cat, ci) => (
-            <div key={ci} style={{ marginTop: 15 }}>
+            <div key={ci} style={{ marginTop: 20 }}>
               <h3>{cat.title}</h3>
 
-              <ul style={{ listStyle: "none", padding: 0 }}>
-                {cat.items.map((item, ii) => (
-                  <li
+              {cat.items.map((item, ii) => {
+                const selected = cart.some(
+                  (i) => i.name === item.name
+                )
+
+                return (
+                  <div
                     key={ii}
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
-                      padding: "6px 0",
+                      padding: "10px 0",
                       borderBottom: "1px solid #eee",
                     }}
                   >
-                    <span>{item.name}</span>
-                    {item.price && (
-                      <strong>{item.price}</strong>
+                    <div>
+                      <strong>{item.name}</strong>
+                      {item.price && (
+                        <div style={{ fontSize: 13 }}>
+                          {item.price}
+                        </div>
+                      )}
+                    </div>
+
+                    {canOrder && (
+                      <button
+                        onClick={() => {
+                          setCart((prev) =>
+                            selected
+                              ? prev.filter(
+                                (i) =>
+                                  i.name !== item.name
+                              )
+                              : [...prev, item]
+                          )
+                        }}
+                      >
+                        {selected ? "Retirer" : "Ajouter"}
+                      </button>
                     )}
-                  </li>
-                ))}
-              </ul>
+                  </div>
+                )
+              })}
             </div>
           ))}
         </section>
       ))}
 
-      {/* ───────── BOUTON COMMANDER ───────── */}
-      {whatsappLink && (
-        <a
-          href={whatsappLink}
-          target="_blank"
-          rel="noopener noreferrer"
+      {/* ───────── PANIER FIXE ───────── */}
+      {canOrder && cart.length > 0 && (
+        <div
           style={{
             position: "fixed",
             bottom: 20,
             right: 20,
-            background: "#25D366",
+            background: "#111",
             color: "white",
-            padding: "14px 20px",
-            borderRadius: 30,
-            fontWeight: "bold",
-            textDecoration: "none",
+            padding: 16,
+            borderRadius: 10,
+            width: 280,
           }}
         >
-          Commander via WhatsApp
-        </a>
+          <strong>Votre commande</strong>
+
+          <ul style={{ paddingLeft: 16 }}>
+            {cart.map((i, idx) => (
+              <li key={idx}>
+                {i.name} {i.price && `(${i.price})`}
+              </li>
+            ))}
+          </ul>
+
+          {whatsappLink && (
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "block",
+                marginTop: 10,
+                background: "#25D366",
+                color: "white",
+                padding: 10,
+                textAlign: "center",
+                borderRadius: 6,
+                textDecoration: "none",
+              }}
+            >
+              Commander via WhatsApp
+            </a>
+          )}
+        </div>
       )}
     </main>
   )
