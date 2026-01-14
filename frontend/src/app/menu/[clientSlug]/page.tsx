@@ -21,9 +21,9 @@ type Section = {
 }
 
 type Menu = {
-  clientSlug: string
-  language: string
-  sections: Section[]
+  clientSlug?: string
+  language?: string
+  sections?: Section[]
   orderMode?: "none" | "whatsapp" | "form"
   whatsappNumber?: string
 }
@@ -47,45 +47,34 @@ export default function PublicMenuPage() {
 
   if (loading) return <p>Chargement…</p>
   if (error) return <p>{error}</p>
-  if (!menu) return null
+  if (!menu) return <p>Menu indisponible</p>
+
+  const sections = Array.isArray(menu.sections) ? menu.sections : []
+
+  const displayName =
+    typeof menu.clientSlug === "string"
+      ? menu.clientSlug.replace(/-/g, " ")
+      : clientSlug.replace(/-/g, " ")
 
   const whatsappLink =
-    menu.whatsappNumber &&
-    `https://wa.me/${menu.whatsappNumber}?text=${encodeURIComponent(
-      "Bonjour, je souhaite commander depuis votre menu."
-    )}`
+    menu.orderMode === "whatsapp" && menu.whatsappNumber
+      ? `https://wa.me/${menu.whatsappNumber.replace(/\D/g, "")}`
+      : null
 
   return (
     <main style={{ padding: 20, maxWidth: 900, margin: "0 auto" }}>
-      <h1 style={{ marginBottom: 20 }}>
-        {menu.clientSlug.replace("-", " ")}
+      <h1 style={{ textTransform: "capitalize", marginBottom: 30 }}>
+        {displayName}
       </h1>
 
-      {/* BOUTON COMMANDER */}
-      {menu.orderMode === "whatsapp" && whatsappLink && (
-        <a
-          href={whatsappLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={styles.orderBtn}
-        >
-          📲 Commander via WhatsApp
-        </a>
-      )}
+      {sections.length === 0 && <p>Aucun menu disponible</p>}
 
-      {menu.orderMode === "form" && (
-        <a href="#order-form" style={styles.orderBtn}>
-          🛒 Commander
-        </a>
-      )}
-
-      {/* MENU */}
-      {menu.sections.map((section, si) => (
-        <section key={si} style={{ marginTop: 40 }}>
+      {sections.map((section, si) => (
+        <section key={si} style={{ marginBottom: 40 }}>
           <h2>{section.title}</h2>
 
           {section.categories.map((cat, ci) => (
-            <div key={ci} style={{ marginTop: 20 }}>
+            <div key={ci} style={{ marginTop: 15 }}>
               <h3>{cat.title}</h3>
 
               <ul style={{ listStyle: "none", padding: 0 }}>
@@ -95,7 +84,7 @@ export default function PublicMenuPage() {
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
-                      padding: "8px 0",
+                      padding: "6px 0",
                       borderBottom: "1px solid #eee",
                     }}
                   >
@@ -109,65 +98,53 @@ export default function PublicMenuPage() {
         </section>
       ))}
 
-      {/* FORMULAIRE SIMPLE */}
+      {/* ───────── BOUTON COMMANDER ───────── */}
+      {menu.orderMode === "whatsapp" && whatsappLink && (
+        <a
+          href={whatsappLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={styles.whatsapp}
+        >
+          Commander via WhatsApp
+        </a>
+      )}
+
       {menu.orderMode === "form" && (
-        <form id="order-form" style={{ marginTop: 50 }}>
-          <h2>Commander</h2>
-
-          <input
-            placeholder="Nom"
-            required
-            style={styles.input}
-          />
-          <input
-            placeholder="Téléphone"
-            required
-            style={styles.input}
-          />
-          <textarea
-            placeholder="Votre commande"
-            required
-            style={styles.textarea}
-          />
-
-          <button style={styles.submitBtn}>
-            Envoyer la commande
-          </button>
-        </form>
+        <a
+          href={`/menu/${clientSlug}/order`}
+          style={styles.form}
+        >
+          Commander
+        </a>
       )}
     </main>
   )
 }
 
+/* ───────── STYLES ───────── */
+
 const styles: Record<string, React.CSSProperties> = {
-  orderBtn: {
-    display: "inline-block",
-    marginBottom: 30,
-    padding: "14px 20px",
-    background: "#16a34a",
+  whatsapp: {
+    position: "fixed",
+    bottom: 20,
+    right: 20,
+    background: "#25D366",
     color: "white",
-    borderRadius: 8,
+    padding: "14px 20px",
+    borderRadius: 30,
     fontWeight: "bold",
     textDecoration: "none",
   },
-  input: {
-    display: "block",
-    width: "100%",
-    padding: 12,
-    marginBottom: 10,
-  },
-  textarea: {
-    display: "block",
-    width: "100%",
-    padding: 12,
-    height: 120,
-    marginBottom: 10,
-  },
-  submitBtn: {
+  form: {
+    position: "fixed",
+    bottom: 20,
+    right: 20,
     background: "#2563eb",
     color: "white",
-    padding: "12px 20px",
-    borderRadius: 8,
+    padding: "14px 20px",
+    borderRadius: 30,
     fontWeight: "bold",
+    textDecoration: "none",
   },
 }
