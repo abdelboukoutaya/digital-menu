@@ -7,8 +7,10 @@ import { getAdminToken } from "@/lib/auth"
 
 type Menu = {
     _id: string
-    name: string
-    price?: number
+    clientSlug: string
+    language: string
+    sections: any[]
+    updatedAt?: string
 }
 
 export default function MenusPage() {
@@ -38,16 +40,8 @@ export default function MenusPage() {
 
                 const data = await res.json()
 
-                // ✅ ADAPTATION À LA RÉPONSE BACKEND
-                if (Array.isArray(data)) {
-                    setMenus(data)
-                } else if (Array.isArray(data.menus)) {
-                    setMenus(data.menus)
-                } else if (Array.isArray(data.data)) {
-                    setMenus(data.data)
-                } else {
-                    setMenus([])
-                }
+                // backend retourne un tableau direct
+                setMenus(Array.isArray(data) ? data : [])
             } catch (err: any) {
                 setError(err.message)
             } finally {
@@ -71,16 +65,24 @@ export default function MenusPage() {
                 <table>
                     <thead>
                         <tr>
-                            <th>Nom</th>
-                            <th>Prix</th>
+                            <th>Client</th>
+                            <th>Langue</th>
+                            <th>Sections</th>
+                            <th>Dernière mise à jour</th>
                             <th />
                         </tr>
                     </thead>
                     <tbody>
                         {menus.map((menu) => (
                             <tr key={menu._id}>
-                                <td>{menu.name}</td>
-                                <td>{menu.price ?? "-"}</td>
+                                <td>{menu.clientSlug}</td>
+                                <td>{menu.language}</td>
+                                <td>{menu.sections?.length ?? 0}</td>
+                                <td>
+                                    {menu.updatedAt
+                                        ? new Date(menu.updatedAt).toLocaleDateString()
+                                        : "-"}
+                                </td>
                                 <td>
                                     <Link
                                         href={`/dashboard/menus/${menu._id}`}
