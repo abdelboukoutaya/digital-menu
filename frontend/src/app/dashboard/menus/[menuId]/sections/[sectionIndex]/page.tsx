@@ -19,8 +19,8 @@ export default function CategoriesPage() {
     const { menuId, sectionIndex } = useParams<any>()
     const s = Number(sectionIndex)
 
+    const [menu, setMenu] = useState<any>(null)
     const [categories, setCategories] = useState<Category[]>([])
-    const [sectionTitle, setSectionTitle] = useState("")
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -30,26 +30,30 @@ export default function CategoriesPage() {
             },
         })
             .then((r) => r.json())
-            .then((menu) => {
-                setSectionTitle(menu.sections[s].title)
-                setCategories(menu.sections[s].categories || [])
+            .then((data) => {
+                setMenu(data)
+                setCategories(data.sections[s].categories || [])
                 setLoading(false)
             })
     }, [menuId, s])
 
     function saveAll() {
+        if (!menu) return
+
+        const updatedMenu = {
+            ...menu,
+            sections: menu.sections.map((sec: any, i: number) =>
+                i === s ? { ...sec, categories } : sec
+            ),
+        }
+
         fetch(`${API}/api/admin/menus/${menuId}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${getAdminToken()}`,
             },
-            body: JSON.stringify({
-                sections: (prev: any) => {
-                    prev[s].categories = categories
-                    return prev
-                },
-            }),
+            body: JSON.stringify(updatedMenu),
         }).then(() => alert("Catégories enregistrées"))
     }
 
@@ -62,7 +66,7 @@ export default function CategoriesPage() {
                 <Link href="/dashboard/menus">Menus</Link> {" > "}
                 <Link href={`/dashboard/menus/${menuId}`}>Menu</Link> {" > "}
                 <Link href={`/dashboard/menus/${menuId}/sections`}>Sections</Link> {" > "}
-                <strong>{sectionTitle}</strong>
+                <strong>{menu.sections[s].title}</strong>
             </nav>
 
             {/* HEADER */}
