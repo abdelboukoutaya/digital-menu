@@ -1,9 +1,17 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { useParams } from "next/navigation"
-import { getAdminToken } from "@/lib/auth"
 import { useRequireAdmin } from "@/lib/requireAdmin"
+import { getAdminToken } from "@/lib/auth"
+
+const API = "https://chic-renewal-production.up.railway.app"
+
+type Item = {
+    name: string
+    price?: string
+}
 
 export default function ProductsPage() {
     useRequireAdmin()
@@ -13,101 +21,129 @@ export default function ProductsPage() {
     const s = Number(sectionIndex)
     const c = Number(categoryIndex)
 
-    const [items, setItems] = useState<any[]>([])
-    const [menuType, setMenuType] = useState<"catalogue" | "boutique">(
-        "catalogue"
-    )
+    const [items, setItems] = useState<Item[]>([])
+    const [menuType, setMenuType] = useState<"catalogue" | "boutique">("catalogue")
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus/${menuId}`, {
+        fetch(`${API}/api/admin/menus/${menuId}`, {
             headers: {
                 Authorization: `Bearer ${getAdminToken()}`,
             },
         })
             .then((r) => r.json())
-            .then((data) => {
-                setItems(data.sections[s].categories[c].items || [])
-                setMenuType(data.menuType || "catalogue")
+            .then((menu) => {
+                setItems(menu.sections[s].categories[c].items || [])
+                setMenuType(menu.menuType || "catalogue")
+                setLoading(false)
             })
     }, [menuId, s, c])
 
-    async function save(updated: any[]) {
+    function saveAll() {
         if (
             menuType === "boutique" &&
-            updated.some((i) => !i.price || i.price === "")
+            items.some((i) => !i.price || i.price.trim() === "")
         ) {
-            alert("Prix obligatoire")
+            alert("Prix obligatoire pour une boutique")
             return
         }
 
-        const res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus/${menuId}`,
-            {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${getAdminToken()}`,
+        fetch(`${API}/api/admin/menus/${menuId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getAdminToken()}`,
+            },
+            body: JSON.stringify({
+                sections: (prev: any) => {
+                    prev[s].categories[c].items = items
+                    return prev
                 },
-                body: JSON.stringify({
-                    sections: (prev: any) => {
-                        prev[s].categories[c].items = updated
-                        return prev
-                    },
-                }),
-            }
-        )
+            }),
+        }).then(() => alert("Menu enregistré"))
     }
+
+    if (loading) return <p>Chargement…</p>
 
     return (
         <>
-            <h1>Produits</h1>
+            {/* BREADCRUMB */}
+            <nav style={{ marginBottom: 20 }}>
+                <Link href="/dashboard/menus">Menus</Link> {" > "}
+                <Link href={`/dashboard/menus/${menuId}`}>Menu</Link> {" > "}
+                <Link href={`/dashboard/menus/${menuId}/sections`}>Sections</Link> {" > "}
+                <Link
+                    href={`/dashboard/menus/${menuId}/sections/${s}`}
+                >
+                    Catégories
+                </Link>
+                {" > "}
+                <strong>Produits</strong>
+            </nav>
+
+            {/* ACTIONS */}
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <h1>Produits</h1>
+                <button onClick={saveAll}>💾 Enregistrer</button>
+            </div>
 
             <button
-                onClick={() => {
-                    const updated = [...items, { name: "Produit", price: "" }]
-                    setItems(updated)
-                    save(updated)
-                }}
+                onClick={() =>
+                    setItems([...items, { name: "Nouveau produit", price: "" }])
+                }
             >
-                + Ajouter
+                + Ajouter un produit
             </button>
 
-            {items.map((item, i) => (
-                <div key={i}>
-                    <input
-                        value={item.name}
-                        onChange={(e) => {
-                            const u = [...items]
-                            u[i].name = e.target.value
-                            setItems(u)
-                        }}
-                        onBlur={() => save(items)}
-                    />
-
-                    <input
-                        value={item.price || ""}
-                        placeholder={
-                            menuType === "boutique" ? "Prix obligatoire" : "Optionnel"
-                        }
-                        onChange={(e) => {
-                            const u = [...items]
-                            u[i].price = e.target.value
-                            setItems(u)
-                        }}
-                        onBlur={() => save(items)}
-                    />
-
-                    <button
-                        onClick={() => {
-                            const u = items.filter((_, x) => x !== i)
-                            setItems(u)
-                            save(u)
-                        }}
-                    >
-                        Supprimer
-                    </button>
-                </div>
-            ))}
+            <table style={{ marginTop: 20 }}>
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Prix</th>
+                        <th />
+                    </tr>
+                </thead>
+                <tbody>
+                    {items.map((item, i) => (
+                        <tr key={i}>
+                            <td>
+                                <input
+                                    value={item.name}
+                                    onChange={(e) => {
+                                        const copy = [...items]
+                                        copy[i].name = e.target.value
+                                        setItems(copy)
+                                    }}
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    value={item.price || ""}
+                                    placeholder={
+                                        menuType === "boutique"
+                                            ? "Prix obligatoire"
+                                            : "Optionnel"
+                                    }
+                                    onChange={(e) => {
+                                        const copy = [...items]
+                                        copy[i].price = e.target.value
+                                        setItems(copy)
+                                    }}
+                                />
+                            </td>
+                            <td>
+                                <button
+                                    onClick={() =>
+                                        setItems(items.filter((_, x) => x !== i))
+                                    }
+                                >
+                                    Supprimer
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </>
     )
 }
