@@ -5,40 +5,48 @@ import { useParams, useRouter } from "next/navigation"
 import { useRequireAdmin } from "@/lib/requireAdmin"
 import { getAdminToken } from "@/lib/auth"
 
+type Client = {
+    name: string
+    email: string
+    slug: string
+    menuType: "catalogue" | "boutique"
+    orderMode: "none" | "whatsapp" | "form"
+    whatsappNumber?: string
+}
+
 export default function EditClientPage() {
     useRequireAdmin()
 
-    const { id } = useParams()
+    const { id } = useParams<{ id: string }>()
     const router = useRouter()
 
-    const [name, setName] = useState("")
-    const [email, setEmail] = useState("")
-    const [error, setError] = useState("")
+    const [client, setClient] = useState<Client | null>(null)
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState("")
 
     useEffect(() => {
         async function fetchClient() {
             try {
-                const token = getAdminToken()
-
                 const res = await fetch(
-                    `https://chic-renewal-production.up.railway.app/api/admin/clients/${id}`,
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients/${id}`,
                     {
                         headers: {
-                            Authorization: `Bearer ${token}`,
+                            Authorization: `Bearer ${getAdminToken()}`,
                         },
                     }
                 )
 
-                if (!res.ok) {
-                    throw new Error("Impossible de charger le client")
-                }
+                if (!res.ok) throw new Error("Impossible de charger le client")
 
                 const data = await res.json()
-                setName(data.name)
-                setEmail(data.email)
-            } catch (err: any) {
-                setError(err.message)
+
+                setClient({
+                    ...data,
+                    menuType: data.menuType || "catalogue",
+                    orderMode: data.orderMode || "none",
+                })
+            } catch (e: any) {
+                setError(e.message)
             } finally {
                 setLoading(false)
             }
@@ -47,56 +55,106 @@ export default function EditClientPage() {
         fetchClient()
     }, [id])
 
-    async function handleSubmit(e: React.FormEvent) {
+    async function saveClient(e: React.FormEvent) {
         e.preventDefault()
+        if (!client) return
 
         try {
-            const token = getAdminToken()
-
             const res = await fetch(
-                `https://chic-renewal-production.up.railway.app/api/admin/clients/${id}`,
+                `${process.env.NEXT_PUBLIC_API_URL}/api/admin/clients/${id}`,
                 {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
+                        Authorization: `Bearer ${getAdminToken()}`,
                     },
-                    body: JSON.stringify({ name, email }),
+                    body: JSON.stringify(client),
                 }
             )
 
-            if (!res.ok) {
-                throw new Error("Échec de la mise à jour")
-            }
+            if (!res.ok) throw new Error("Erreur sauvegarde client")
 
             router.push("/dashboard/clients")
-        } catch (err: any) {
-            setError(err.message)
+        } catch (e: any) {
+            setError(e.message)
         }
     }
 
     if (loading) return <p>Chargement...</p>
+    if (error) return <p className="error">{error}</p>
+    if (!client) return null
 
     return (
         <>
             <h1>Éditer client</h1>
 
-            <form onSubmit={handleSubmit} style={{ maxWidth: 400 }}>
+            <form onSubmit={saveClient} style={{ maxWidth: 400 }}>
                 <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={client.name}
+                    onChange={(e) =>
+                        setClient({ ...client, name: e.target.value })
+                    }
                     placeholder="Nom"
                     required
                 />
 
                 <input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={client.email}
+                    onChange={(e) =>
+                        setClient({ ...client, email: e.target.value })
+                    }
                     placeholder="Email"
                     required
                 />
 
-                {error && <p style={{ color: "red" }}>{error}</p>}
+                <input value={client.slug} disabled />
+
+                <label>
+                    Type de menu
+                    <select
+                        value={client.menuType}
+                        onChange={(e) =>
+                            setClient({
+                                ...client,
+                                menuType: e.target.value as any,
+                            })
+                        }
+                    >
+                        <option value="catalogue">Catalogue</option>
+                        <option value="boutique">Boutique</option>
+                    </select>
+                </label>
+
+                <label>
+                    Mode de commande
+                    <select
+                        value={client.orderMode}
+                        onChange={(e) =>
+                            setClient({
+                                ...client,
+                                orderMode: e.target.value as any,
+                            })
+                        }
+                    >
+                        <option value="none">Aucun</option>
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="form">Formulaire</option>
+                    </select>
+                </label>
+
+                {client.orderMode === "whatsapp" && (
+                    <input
+                        value={client.whatsappNumber || ""}
+                        onChange={(e) =>
+                            setClient({
+                                ...client,
+                                whatsappNumber: e.target.value,
+                            })
+                        }
+                        placeholder="Numéro WhatsApp"
+                        required
+                    />
+                )}
 
                 <button type="submit">Enregistrer</button>
             </form>
