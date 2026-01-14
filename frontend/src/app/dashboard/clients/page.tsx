@@ -69,9 +69,13 @@ export default function ClientsPage() {
                             <td>{client.name}</td>
                             <td>{client.email}</td>
                             <td>
-                                <Link href={`/dashboard/clients/${client._id}`}>
+                                <Link
+                                    href={`/dashboard/clients/${client._id}`}
+                                    className="action-link"
+                                >
                                     Éditer
                                 </Link>
+
                             </td>
                         </tr>
                     ))}
