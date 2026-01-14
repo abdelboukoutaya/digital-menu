@@ -1,9 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { useRequireAdmin } from "@/lib/requireAdmin"
 import { getAdminToken } from "@/lib/auth"
-import Link from "next/link"
+
+const API =
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://chic-renewal-production.up.railway.app"
 
 type Menu = {
     _id: string
@@ -16,17 +20,17 @@ export default function MenusPage() {
     useRequireAdmin()
 
     const [menus, setMenus] = useState<Menu[]>([])
-    const [error, setError] = useState("")
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState("")
 
     useEffect(() => {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus`, {
+        fetch(`${API}/api/admin/menus`, {
             headers: {
                 Authorization: `Bearer ${getAdminToken()}`,
             },
         })
             .then((res) => {
-                if (!res.ok) throw new Error()
+                if (!res.ok) throw new Error("fetch failed")
                 return res.json()
             })
             .then((data) => {
