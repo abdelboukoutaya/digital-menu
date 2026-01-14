@@ -3,22 +3,21 @@ const router = express.Router()
 const Order = require("../models/Order")
 
 router.post("/", async (req, res) => {
-    try {
-        console.log("REQ BODY:", req.body)
+    const { clientSlug, items, source, name, phone } = req.body
 
-        const order = await Order.create(req.body)
-        res.status(201).json(order)
-    } catch (e) {
-        console.error("ORDER ERROR:", e)
-        res.status(500).json({ message: "Order creation failed" })
+    if (!clientSlug || !items || items.length === 0) {
+        return res.status(400).json({ message: "Commande invalide" })
     }
-})
 
-// ⚠️ PUBLIC — à sécuriser plus tard (ex: clé, token, rate limit)
-router.get("/", async (req, res) => {
+    const order = await Order.create({
+        clientSlug,
+        items,
+        source,
+        customer: { name, phone },
+        status: "pending",
+    })
 
-    const orders = await Order.find().sort({ createdAt: -1 })
-    res.json(orders)
+    res.status(201).json(order)
 })
 
 module.exports = router
