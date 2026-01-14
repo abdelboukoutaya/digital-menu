@@ -1,9 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import Link from "next/link"
+import { useParams } from "next/navigation"
 import { useRequireAdmin } from "@/lib/requireAdmin"
 import { getAdminToken } from "@/lib/auth"
+
+const API = "https://chic-renewal-production.up.railway.app"
 
 type Category = {
     title: string
@@ -13,152 +16,102 @@ type Category = {
 export default function CategoriesPage() {
     useRequireAdmin()
 
-    const { menuId, sectionIndex } = useParams<{
-        menuId: string
-        sectionIndex: string
-    }>()
-
-    const router = useRouter()
+    const { menuId, sectionIndex } = useParams<any>()
+    const s = Number(sectionIndex)
 
     const [categories, setCategories] = useState<Category[]>([])
     const [sectionTitle, setSectionTitle] = useState("")
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState("")
-
-    const sIndex = Number(sectionIndex)
 
     useEffect(() => {
-        async function fetchSection() {
-            try {
-                const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus/${menuId}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${getAdminToken()}`,
-                        },
-                    }
-                )
-
-                if (!res.ok) throw new Error("Erreur chargement catégories")
-
-                const data = await res.json()
-                const section = data.sections[sIndex]
-
-                if (!section) throw new Error("Section introuvable")
-
-                setSectionTitle(section.title)
-                setCategories(section.categories || [])
-            } catch (e: any) {
-                setError(e.message)
-            } finally {
+        fetch(`${API}/api/admin/menus/${menuId}`, {
+            headers: {
+                Authorization: `Bearer ${getAdminToken()}`,
+            },
+        })
+            .then((r) => r.json())
+            .then((menu) => {
+                setSectionTitle(menu.sections[s].title)
+                setCategories(menu.sections[s].categories || [])
                 setLoading(false)
-            }
-        }
+            })
+    }, [menuId, s])
 
-        fetchSection()
-    }, [menuId, sIndex])
-
-    async function saveCategories(updated: Category[]) {
-        try {
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/admin/menus/${menuId}`,
-                {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${getAdminToken()}`,
-                    },
-                    body: JSON.stringify({
-                        sections: (prev: any) => {
-                            const copy = [...prev]
-                            copy[sIndex].categories = updated
-                            return copy
-                        },
-                    }),
-                }
-            )
-
-            if (!res.ok) throw new Error()
-        } catch {
-            alert("Erreur sauvegarde catégories")
-        }
+    function saveAll() {
+        fetch(`${API}/api/admin/menus/${menuId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getAdminToken()}`,
+            },
+            body: JSON.stringify({
+                sections: (prev: any) => {
+                    prev[s].categories = categories
+                    return prev
+                },
+            }),
+        }).then(() => alert("Catégories enregistrées"))
     }
 
-    function addCategory() {
-        const updated = [
-            ...categories,
-            { title: "Nouvelle catégorie", items: [] },
-        ]
-        setCategories(updated)
-        saveCategories(updated)
-    }
-
-    function updateTitle(index: number, title: string) {
-        const updated = [...categories]
-        updated[index].title = title
-        setCategories(updated)
-    }
-
-    function removeCategory(index: number) {
-        if (!confirm("Supprimer cette catégorie ?")) return
-        const updated = categories.filter((_, i) => i !== index)
-        setCategories(updated)
-        saveCategories(updated)
-    }
-
-    if (loading) return <p>Chargement...</p>
-    if (error) return <p className="error">{error}</p>
+    if (loading) return <p>Chargement…</p>
 
     return (
         <>
-            <h1>Catégories</h1>
-            <p>
-                Section : <strong>{sectionTitle}</strong>
-            </p>
+            {/* BREADCRUMB */}
+            <nav style={{ marginBottom: 20 }}>
+                <Link href="/dashboard/menus">Menus</Link> {" > "}
+                <Link href={`/dashboard/menus/${menuId}`}>Menu</Link> {" > "}
+                <Link href={`/dashboard/menus/${menuId}/sections`}>Sections</Link> {" > "}
+                <strong>{sectionTitle}</strong>
+            </nav>
 
-            <button onClick={addCategory}>+ Ajouter une catégorie</button>
+            {/* HEADER */}
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <h1>Catégories</h1>
+                <button onClick={saveAll}>💾 Enregistrer</button>
+            </div>
+
+            <button
+                onClick={() =>
+                    setCategories([
+                        ...categories,
+                        { title: "Nouvelle catégorie", items: [] },
+                    ])
+                }
+            >
+                + Ajouter une catégorie
+            </button>
 
             <ul style={{ marginTop: 20 }}>
-                {categories.map((cat, index) => (
-                    <li key={index} style={{ marginBottom: 12 }}>
+                {categories.map((cat, i) => (
+                    <li key={i} style={{ marginBottom: 10 }}>
                         <input
                             value={cat.title}
-                            onChange={(e) =>
-                                updateTitle(index, e.target.value)
-                            }
-                            onBlur={() => saveCategories(categories)}
+                            onChange={(e) => {
+                                const copy = [...categories]
+                                copy[i].title = e.target.value
+                                setCategories(copy)
+                            }}
                         />
 
-                        <button
-                            onClick={() =>
-                                router.push(
-                                    `/dashboard/menus/${menuId}/sections/${sIndex}/categories/${index}`
-                                )
-                            }
+                        <Link
+                            href={`/dashboard/menus/${menuId}/sections/${s}/categories/${i}`}
                             style={{ marginLeft: 10 }}
                         >
                             Produits
-                        </button>
+                        </Link>
 
                         <button
-                            onClick={() => removeCategory(index)}
-                            className="button-danger"
                             style={{ marginLeft: 10 }}
+                            onClick={() =>
+                                setCategories(categories.filter((_, x) => x !== i))
+                            }
                         >
                             Supprimer
                         </button>
                     </li>
                 ))}
             </ul>
-
-            <button
-                onClick={() =>
-                    router.push(`/dashboard/menus/${menuId}/sections`)
-                }
-                style={{ marginTop: 20 }}
-            >
-                Retour aux sections
-            </button>
         </>
     )
 }
