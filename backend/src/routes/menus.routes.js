@@ -1,8 +1,26 @@
-const express = require("express");
-const router = express.Router();
+router.get("/:clientSlug", async (req, res) => {
+    const menu = await Menu.findOne({
+        clientSlug: req.params.clientSlug,
+    })
 
-const { getMenuByClient } = require("../controllers/menus.controller");
+    if (!menu) {
+        return res.status(404).json({ message: "Menu introuvable" })
+    }
 
-router.get("/:slug", getMenuByClient);
+    const client = await Client.findOne({
+        slug: req.params.clientSlug,
+    })
 
-module.exports = router;
+    res.json({
+        ...menu.toObject(),
+        menuType: client?.menuType || "catalogue",
+        orderMode:
+            client?.menuType === "boutique"
+                ? client.orderMode
+                : "none",
+        whatsappNumber:
+            client?.menuType === "boutique"
+                ? client.whatsappNumber
+                : null,
+    })
+})
