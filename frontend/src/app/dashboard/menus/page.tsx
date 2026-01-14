@@ -5,9 +5,7 @@ import Link from "next/link"
 import { useRequireAdmin } from "@/lib/requireAdmin"
 import { getAdminToken } from "@/lib/auth"
 
-const API =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://chic-renewal-production.up.railway.app"
+const API = "https://chic-renewal-production.up.railway.app"
 
 type Menu = {
     _id: string
@@ -20,8 +18,8 @@ export default function MenusPage() {
     useRequireAdmin()
 
     const [menus, setMenus] = useState<Menu[]>([])
-    const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         fetch(`${API}/api/admin/menus`, {
@@ -30,11 +28,11 @@ export default function MenusPage() {
             },
         })
             .then((res) => {
-                if (!res.ok) throw new Error("fetch failed")
+                if (!res.ok) throw new Error()
                 return res.json()
             })
             .then((data) => {
-                setMenus(Array.isArray(data) ? data : [])
+                setMenus(data)
                 setLoading(false)
             })
             .catch(() => {
@@ -50,38 +48,30 @@ export default function MenusPage() {
         <>
             <h1>Menus</h1>
 
-            <Link href="/dashboard/menus/create">
-                <button>+ Créer un menu</button>
-            </Link>
-
-            {menus.length === 0 ? (
-                <p>Aucun menu</p>
-            ) : (
-                <table style={{ marginTop: 20 }}>
-                    <thead>
-                        <tr>
-                            <th>Client</th>
-                            <th>Langue</th>
-                            <th>Sections</th>
-                            <th />
+            <table>
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Langue</th>
+                        <th>Sections</th>
+                        <th />
+                    </tr>
+                </thead>
+                <tbody>
+                    {menus.map((m) => (
+                        <tr key={m._id}>
+                            <td>{m.clientSlug}</td>
+                            <td>{m.language}</td>
+                            <td>{m.sections.length}</td>
+                            <td>
+                                <Link href={`/dashboard/menus/${m._id}`}>
+                                    Gérer
+                                </Link>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        {menus.map((menu) => (
-                            <tr key={menu._id}>
-                                <td>{menu.clientSlug}</td>
-                                <td>{menu.language}</td>
-                                <td>{menu.sections.length}</td>
-                                <td>
-                                    <Link href={`/dashboard/menus/${menu._id}`}>
-                                        Gérer
-                                    </Link>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
+                    ))}
+                </tbody>
+            </table>
         </>
     )
 }
