@@ -11,6 +11,7 @@ const API = "https://chic-renewal-production.up.railway.app"
 type Item = {
     name: string
     price?: string
+    image?: string
 }
 
 export default function ProductsPage() {
@@ -102,7 +103,7 @@ export default function ProductsPage() {
 
             <button
                 onClick={() =>
-                    setItems([...items, { name: "Nouveau produit", price: "" }])
+                    setItems([...items, { name: "Nouveau produit", price: "", image: "" }])
                 }
             >
                 + Ajouter un produit
@@ -111,6 +112,7 @@ export default function ProductsPage() {
             <table style={{ marginTop: 20 }}>
                 <thead>
                     <tr>
+                        <th>Image</th>
                         <th>Nom</th>
                         <th>Prix</th>
                         <th />
@@ -119,6 +121,20 @@ export default function ProductsPage() {
                 <tbody>
                     {items.map((item, i) => (
                         <tr key={i}>
+                            <td>
+                                <input
+                                    value={item.image || ""}
+                                    placeholder="URL de l'image"
+                                    onChange={(e) => {
+                                        const copy = [...items]
+                                        copy[i].image = e.target.value
+                                        setItems(copy)
+                                    }}
+                                />
+                                {item.image && (
+                                    <img src={item.image} alt={item.name} style={{ width: 50, height: 50, objectFit: "cover", marginTop: 4 }} />
+                                )}
+                            </td>
                             <td>
                                 <input
                                     value={item.name}
