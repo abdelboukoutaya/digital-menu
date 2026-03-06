@@ -13,7 +13,8 @@ const MenuSchema = new Schema(
                         items: [
                             {
                                 name: String,
-                                price: String
+                                price: String,
+                                image: String
                             }
                         ]
                     }

@@ -10,6 +10,7 @@ const API = "https://chic-renewal-production.up.railway.app"
 type Item = {
   name: string
   price?: string
+  image?: string
 }
 
 type Category = {
@@ -113,13 +114,22 @@ export default function PublicMenuPage() {
                       borderBottom: "1px solid #eee",
                     }}
                   >
-                    <div>
-                      <strong>{item.name}</strong>
-                      {item.price && (
-                        <div style={{ fontSize: 13 }}>
-                          {item.price}
-                        </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      {item.image && (
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 6 }}
+                        />
                       )}
+                      <div>
+                        <strong>{item.name}</strong>
+                        {item.price && (
+                          <div style={{ fontSize: 13 }}>
+                            {item.price}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {canOrder && (

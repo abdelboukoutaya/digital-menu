@@ -5,6 +5,7 @@ import { useState } from "react"
 type Item = {
     name: string
     price?: string
+    image?: string
 }
 
 type Props = {
