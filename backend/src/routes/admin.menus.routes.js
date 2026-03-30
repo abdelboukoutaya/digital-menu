@@ -52,4 +52,24 @@ router.put("/:id", async (req, res) => {
     }
 })
 
+/* ───────── CREATE MENU (ADMIN) ───────── */
+router.post("/", async (req, res) => {
+    try {
+        const menu = await Menu.create(req.body)
+        res.status(201).json(menu)
+    } catch (err) {
+        res.status(400).json({ message: "Erreur création menu" })
+    }
+})
+
+/* ───────── DELETE MENU (ADMIN) ───────── */
+router.delete("/:id", async (req, res) => {
+    try {
+        await Menu.findByIdAndDelete(req.params.id)
+        res.status(204).end()
+    } catch (err) {
+        res.status(500).json({ message: "Erreur suppression menu" })
+    }
+})
+
 module.exports = router
